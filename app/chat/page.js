@@ -433,7 +433,7 @@ export default function Chat() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          
+          <a
             href="/aplicacoes"
             style={{
               fontSize: 13,
