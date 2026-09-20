@@ -1,0 +1,50 @@
+               
+               
+┌─────────────┐
+│ Scan Status │
+└─────────────┘
+  Scanning 29 files tracked by git with 1074 Code rules:
+                                                                                                                        
+  Language      Rules   Files          Origin      Rules                                                                
+ ─────────────────────────────        ───────────────────                                                               
+  <multilang>      47      29          Community    1074                                                                
+  js              153       8                                                                                           
+  ts              163       4                                                                                           
+  json              4       3                                                                                           
+  yaml             35       2                                                                                           
+                                                                                                                        
+                
+                
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+✅ Scan completed successfully.
+ • Findings: 2 (2 blocking)
+ • Rules run: 247
+ • Targets scanned: 29
+ • Parsed lines: ~99.9%
+ • Scan skipped: 
+   ◦ Matching --exclude patterns: 1
+   ◦ Files matching .semgrepignore patterns: 295
+ • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
+Ran 247 rules on 29 files: 2 findings.
+                   
+                   
+┌─────────────────┐
+│ 2 Code Findings │
+└─────────────────┘
+              
+    .env.local
+   ❯❯❱ generic.secrets.security.detected-jwt-token.detected-jwt-token
+          ❰❰ Blocking ❱❱
+          JWT token detected          
+          Details: https://sg.run/05N5
+                                      
+            2┆ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIs
+               InJlZiI6Im9zdnVvZHBxeGpra3dzdXJwZGZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2MDA1NTMsImV4cCI6MjE
+               wNTE3NjU1M30.Utpd-SmDhn77Ij7W7S4BX9AiesafdGi2sg6IH7kFFBk                                   
+            ⋮┆----------------------------------------
+            4┆ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJl
+               ZiI6Im9zdnVvZHBxeGpra3dzdXJwZGZtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTYwMDU1MywiZXh
+               wIjoyMTA1MTc2NTUzfQ.YNaXazvP9ygAyM9rjX07zHYq30I88gh8NKInaNNti8o                            
+
