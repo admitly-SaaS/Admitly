@@ -4,6 +4,21 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 
+const PASSOS_ONBOARDING = [
+  {
+    titulo: 'Bem-vindo ao Admitly',
+    texto: 'Aqui você conversa com seu mentor de IA para admissões internacionais. Conte seu objetivo, idade e perfil, e o Admitly te guia passo a passo.',
+  },
+  {
+    titulo: 'Minhas aplicações',
+    texto: 'Quando você mencionar uma universidade de interesse, o Admitly te oferece adicionar ela à sua lista de aplicações — com status, prazo e checklist próprio.',
+  },
+  {
+    titulo: 'Peça um checklist',
+    texto: 'Peça pro Admitly montar um cronograma ou lista de próximos passos, e adicione os itens direto à sua lista de tarefas com um clique.',
+  },
+]
+
 function renderizarMensagem(texto, aoAdicionarTarefa, aoAdicionarUniversidade) {
   const linhas = texto.split('\n')
   return linhas.map((linha, i) => {
@@ -94,6 +109,8 @@ export default function Chat() {
   const [carregandoHistorico, setCarregandoHistorico] = useState(true)
   const [aviso, setAviso] = useState('')
   const [menuAberto, setMenuAberto] = useState(false)
+  const [mostrarOnboarding, setMostrarOnboarding] = useState(false)
+  const [passoAtual, setPassoAtual] = useState(0)
   const fimDasMensagens = useRef(null)
 
   const corDestaque = '#10b981'
@@ -102,6 +119,13 @@ export default function Chat() {
   useEffect(() => {
     fimDasMensagens.current?.scrollIntoView({ behavior: 'smooth' })
   }, [mensagens])
+
+  useEffect(() => {
+    const jaViu = typeof window !== 'undefined' && localStorage.getItem('admitly_onboarding_visto')
+    if (!jaViu) {
+      setMostrarOnboarding(true)
+    }
+  }, [])
 
   useEffect(() => {
     const iniciar = async () => {
@@ -159,6 +183,20 @@ export default function Chat() {
 
     iniciar()
   }, [router])
+
+  const fecharOnboarding = () => {
+    localStorage.setItem('admitly_onboarding_visto', '1')
+    setMostrarOnboarding(false)
+    setPassoAtual(0)
+  }
+
+  const proximoPasso = () => {
+    if (passoAtual < PASSOS_ONBOARDING.length - 1) {
+      setPassoAtual((p) => p + 1)
+    } else {
+      fecharOnboarding()
+    }
+  }
 
   const sair = async () => {
     await supabase.auth.signOut()
@@ -260,6 +298,106 @@ export default function Chat() {
         }
       `}</style>
 
+      {mostrarOnboarding && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.4)',
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+          }}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: 16,
+              padding: 32,
+              maxWidth: 380,
+              width: '100%',
+              textAlign: 'center',
+            }}
+          >
+            <span
+              style={{
+                display: 'inline-grid',
+                placeItems: 'center',
+                width: 48,
+                height: 48,
+                borderRadius: 12,
+                background: '#ecfdf5',
+                color: corDestaque,
+                marginBottom: 16,
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
+                <path d="M22 10v6" />
+                <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
+              </svg>
+            </span>
+            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 10 }}>
+              {PASSOS_ONBOARDING[passoAtual].titulo}
+            </h2>
+            <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6, marginBottom: 24 }}>
+              {PASSOS_ONBOARDING[passoAtual].texto}
+            </p>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 20 }}>
+              {PASSOS_ONBOARDING.map((_, i) => (
+                <span
+                  key={i}
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background: i === passoAtual ? corDestaque : '#e5e2dc',
+                  }}
+                />
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={fecharOnboarding}
+                style={{
+                  flex: 1,
+                  padding: '10px 0',
+                  border: '1px solid #ddd',
+                  borderRadius: 10,
+                  background: '#fff',
+                  color: corContraste,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Pular
+              </button>
+              <button
+                onClick={proximoPasso}
+                style={{
+                  flex: 1,
+                  padding: '10px 0',
+                  border: 'none',
+                  borderRadius: 10,
+                  background: corDestaque,
+                  color: '#fff',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                {passoAtual < PASSOS_ONBOARDING.length - 1 ? 'Próximo' : 'Começar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header
         style={{
           display: 'flex',
@@ -295,7 +433,7 @@ export default function Chat() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <a
+          
             href="/aplicacoes"
             style={{
               fontSize: 13,
@@ -380,6 +518,7 @@ export default function Chat() {
         </div>
       )}
 
+      <React.Fragment>
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px 0' }}>
         <div style={{ maxWidth: 700, margin: '0 auto', padding: '0 20px' }}>
           {mensagens.map((msg, i) => (
@@ -490,6 +629,7 @@ export default function Chat() {
           </p>
         </div>
       </div>
+      </React.Fragment>
     </div>
   )
 }
