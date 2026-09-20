@@ -4,13 +4,58 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 
+function renderizarMensagem(texto, aoAdicionarTarefa) {
+  const linhas = texto.split('\n')
+  return linhas.map((linha, i) => {
+    if (linha.startsWith('TAREFA: ')) {
+      const tarefaTexto = linha.replace('TAREFA: ', '')
+      return (
+        <div
+          key={i}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+            background: '#f4f4f4',
+            borderRadius: 8,
+            padding: '8px 12px',
+            margin: '4px 0',
+          }}
+        >
+          <span style={{ fontSize: 14 }}>{tarefaTexto}</span>
+          <button
+            onClick={() => aoAdicionarTarefa(tarefaTexto)}
+            style={{
+              flexShrink: 0,
+              fontSize: 12,
+              fontWeight: 600,
+              padding: '4px 10px',
+              borderRadius: 6,
+              border: 'none',
+              background: '#10b981',
+              color: '#fff',
+              cursor: 'pointer',
+            }}
+          >
+            + Adicionar
+          </button>
+        </div>
+      )
+    }
+    return <div key={i}>{linha || '\u00A0'}</div>
+  })
+}
+
 export default function Chat() {
   const router = useRouter()
   const [mensagens, setMensagens] = useState([])
   const [input, setInput] = useState('')
   const [carregando, setCarregando] = useState(false)
   const [conversationId, setConversationId] = useState(null)
+  const [userId, setUserId] = useState(null)
   const [carregandoHistorico, setCarregandoHistorico] = useState(true)
+  const [tarefaAdicionada, setTarefaAdicionada] = useState('')
   const fimDasMensagens = useRef(null)
 
   const corDestaque = '#10b981'
@@ -27,6 +72,7 @@ export default function Chat() {
         router.push('/login')
         return
       }
+      setUserId(user.id)
 
       const { data: assinatura } = await supabase
         .from('subscriptions')
@@ -75,6 +121,13 @@ export default function Chat() {
 
     iniciar()
   }, [router])
+
+  const adicionarTarefa = async (titulo) => {
+    if (!userId) return
+    await supabase.from('tasks').insert({ user_id: userId, title: titulo })
+    setTarefaAdicionada(titulo)
+    setTimeout(() => setTarefaAdicionada(''), 2000)
+  }
 
   const enviarMensagem = async () => {
     if (!input.trim() || !conversationId) return
@@ -150,33 +203,60 @@ export default function Chat() {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 10,
+          justifyContent: 'space-between',
           padding: '14px 20px',
           borderBottom: '1px solid #e5e2dc',
         }}
       >
-        <span
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span
+            style={{
+              display: 'grid',
+              placeItems: 'center',
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              background: corDestaque,
+              color: '#fff',
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
+              <path d="M22 10v6" />
+              <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
+            </svg>
+          </span>
+          <span style={{ fontWeight: 700, fontSize: 16 }}>
+            <span style={{ color: corContraste }}>Admit</span>
+            <span style={{ color: corDestaque }}>ly</span>
+          </span>
+        </div>
+        
+        <a
+          href="/tarefas"
           style={{
-            display: 'grid',
-            placeItems: 'center',
-            width: 32,
-            height: 32,
-            borderRadius: 8,
-            background: corDestaque,
-            color: '#fff',
+            fontSize: 13,
+            fontWeight: 600,
+            color: corContraste,
+            textDecoration: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
           }}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
-            <path d="M22 10v6" />
-            <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m9 11 3 3L22 4" />
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
           </svg>
-        </span>
-        <span style={{ fontWeight: 700, fontSize: 16 }}>
-          <span style={{ color: corContraste }}>Admit</span>
-          <span style={{ color: corDestaque }}>ly</span>
-        </span>
+          Minhas tarefas
+        </a>
       </header>
+
+      {tarefaAdicionada && (
+        <div style={{ background: '#ecfdf5', color: corDestaque, fontSize: 13, textAlign: 'center', padding: 8 }}>
+          "{tarefaAdicionada}" adicionada à sua lista de tarefas ✓
+        </div>
+      )}
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px 0' }}>
         <div style={{ maxWidth: 700, margin: '0 auto', padding: '0 20px' }}>
@@ -209,8 +289,8 @@ export default function Chat() {
                   {msg.texto}
                 </div>
               ) : (
-                <div style={{ fontSize: 15, lineHeight: 1.6, color: '#1a1a1a', whiteSpace: 'pre-wrap' }}>
-                  {msg.texto}
+                <div style={{ fontSize: 15, lineHeight: 1.6, color: '#1a1a1a', width: '100%' }}>
+                  {renderizarMensagem(msg.texto, adicionarTarefa)}
                 </div>
               )}
             </div>
