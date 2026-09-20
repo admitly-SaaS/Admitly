@@ -69,7 +69,7 @@ export default function Assinar() {
             Assine o Admitly para ter acesso ilimitado ao mentor de IA para admissões internacionais.
           </p>
 
-          
+          <a
             href="https://pay.kiwify.com.br/1gI05Vm"
             target="_blank"
             rel="noopener noreferrer"
