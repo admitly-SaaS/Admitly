@@ -44,6 +44,7 @@ export default function Tarefas() {
   }
 
   const concluidas = tarefas.filter((t) => t.done).length
+  const progresso = tarefas.length === 0 ? 0 : Math.round((concluidas / tarefas.length) * 100)
 
   if (carregando) {
     return (
@@ -87,6 +88,7 @@ export default function Tarefas() {
             <span style={{ color: corDestaque }}>ly</span>
           </span>
         </div>
+        
         <a
           href="/chat"
           style={{
@@ -100,6 +102,18 @@ export default function Tarefas() {
         </a>
       </header>
 
+      {/* Barra de progresso */}
+      <div style={{ height: 4, background: '#e5e2dc' }}>
+        <div
+          style={{
+            height: '100%',
+            width: `${progresso}%`,
+            background: corDestaque,
+            transition: 'width 0.3s ease',
+          }}
+        />
+      </div>
+
       <div style={{ maxWidth: 700, margin: '0 auto', padding: '32px 20px' }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a1a', marginBottom: 6 }}>
           Minhas tarefas
@@ -107,7 +121,7 @@ export default function Tarefas() {
         <p style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>
           {tarefas.length === 0
             ? 'Nenhuma tarefa ainda — peça um checklist pro Admitly no chat.'
-            : `${concluidas} de ${tarefas.length} concluídas`}
+            : `${concluidas} de ${tarefas.length} concluídas (${progresso}%)`}
         </p>
 
         {tarefas.map((t) => (
