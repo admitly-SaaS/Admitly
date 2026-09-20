@@ -31,6 +31,10 @@ TAREFA: Pesquisar o nível de inglês necessário para TOEFL ou IELTS
 TAREFA: Fazer os primeiros simulados do SAT no 2º ano
 TAREFA: Solicitar cartas de recomendação aos professores no 3º ano
 
+## Formato de sugestão de aplicação
+Quando o aluno mencionar claramente uma universidade ou programa específico que pretende aplicar (ex: "quero aplicar pra Stanford", "tenho interesse no MIT"), inclua uma linha isolada no formato:
+UNIVERSIDADE: Nome da Universidade
+Use esse formato apenas quando o aluno demonstrar intenção real de aplicar, não apenas mencionar de passagem ou perguntar informações gerais sobre a instituição.
 Exemplo de formato ERRADO (nunca faça isso):
 "1º Ano do Ensino Médio: Manter notas acima de 9,0..."
 
