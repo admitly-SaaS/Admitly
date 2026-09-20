@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 
-function renderizarMensagem(texto, aoAdicionarTarefa) {
+function renderizarMensagem(texto, aoAdicionarTarefa, aoAdicionarUniversidade) {
   const linhas = texto.split('\n')
   return linhas.map((linha, i) => {
     if (linha.startsWith('TAREFA: ')) {
@@ -43,6 +43,43 @@ function renderizarMensagem(texto, aoAdicionarTarefa) {
         </div>
       )
     }
+    if (linha.startsWith('UNIVERSIDADE: ')) {
+      const nomeUniversidade = linha.replace('UNIVERSIDADE: ', '')
+      return (
+        <div
+          key={i}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+            background: '#ecfdf5',
+            border: '1px solid #a7f3d0',
+            borderRadius: 8,
+            padding: '8px 12px',
+            margin: '4px 0',
+          }}
+        >
+          <span style={{ fontSize: 14, fontWeight: 600 }}>🎓 {nomeUniversidade}</span>
+          <button
+            onClick={() => aoAdicionarUniversidade(nomeUniversidade)}
+            style={{
+              flexShrink: 0,
+              fontSize: 12,
+              fontWeight: 600,
+              padding: '4px 10px',
+              borderRadius: 6,
+              border: 'none',
+              background: '#10b981',
+              color: '#fff',
+              cursor: 'pointer',
+            }}
+          >
+            + Minhas aplicações
+          </button>
+        </div>
+      )
+    }
     return <div key={i}>{linha || '\u00A0'}</div>
   })
 }
@@ -55,7 +92,7 @@ export default function Chat() {
   const [conversationId, setConversationId] = useState(null)
   const [userId, setUserId] = useState(null)
   const [carregandoHistorico, setCarregandoHistorico] = useState(true)
-  const [tarefaAdicionada, setTarefaAdicionada] = useState('')
+  const [aviso, setAviso] = useState('')
   const fimDasMensagens = useRef(null)
 
   const corDestaque = '#10b981'
@@ -125,8 +162,26 @@ export default function Chat() {
   const adicionarTarefa = async (titulo) => {
     if (!userId) return
     await supabase.from('tasks').insert({ user_id: userId, title: titulo })
-    setTarefaAdicionada(titulo)
-    setTimeout(() => setTarefaAdicionada(''), 2000)
+    setAviso(`"${titulo}" adicionada às suas tarefas`)
+    setTimeout(() => setAviso(''), 2500)
+  }
+
+  const adicionarUniversidade = async (nome) => {
+    if (!userId) return
+    const { data: existente } = await supabase
+      .from('applications')
+      .select('id')
+      .eq('user_id', userId)
+      .ilike('university', nome)
+      .maybeSingle()
+
+    if (existente) {
+      setAviso(`${nome} já está nas suas aplicações`)
+    } else {
+      await supabase.from('applications').insert({ user_id: userId, university: nome })
+      setAviso(`${nome} adicionada às suas aplicações`)
+    }
+    setTimeout(() => setAviso(''), 2500)
   }
 
   const enviarMensagem = async () => {
@@ -231,9 +286,8 @@ export default function Chat() {
             <span style={{ color: corDestaque }}>ly</span>
           </span>
         </div>
-        
         <a
-          href="/tarefas"
+          href="/aplicacoes"
           style={{
             fontSize: 13,
             fontWeight: 600,
@@ -245,16 +299,17 @@ export default function Chat() {
           }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m9 11 3 3L22 4" />
-            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+            <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
+            <path d="M22 10v6" />
+            <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
           </svg>
-          Minhas tarefas
+          Minhas aplicações
         </a>
       </header>
 
-      {tarefaAdicionada && (
+      {aviso && (
         <div style={{ background: '#ecfdf5', color: corDestaque, fontSize: 13, textAlign: 'center', padding: 8 }}>
-          "{tarefaAdicionada}" adicionada à sua lista de tarefas ✓
+          {aviso} ✓
         </div>
       )}
 
@@ -290,7 +345,7 @@ export default function Chat() {
                 </div>
               ) : (
                 <div style={{ fontSize: 15, lineHeight: 1.6, color: '#1a1a1a', width: '100%' }}>
-                  {renderizarMensagem(msg.texto, adicionarTarefa)}
+                  {renderizarMensagem(msg.texto, adicionarTarefa, adicionarUniversidade)}
                 </div>
               )}
             </div>
