@@ -88,7 +88,6 @@ export default function Tarefas() {
             <span style={{ color: corDestaque }}>ly</span>
           </span>
         </div>
-        
         <a
           href="/chat"
           style={{
@@ -102,7 +101,6 @@ export default function Tarefas() {
         </a>
       </header>
 
-      {/* Barra de progresso */}
       <div style={{ height: 4, background: '#e5e2dc' }}>
         <div
           style={{
@@ -118,11 +116,46 @@ export default function Tarefas() {
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a1a', marginBottom: 6 }}>
           Minhas tarefas
         </h1>
-        <p style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>
-          {tarefas.length === 0
-            ? 'Nenhuma tarefa ainda — peça um checklist pro Admitly no chat.'
-            : `${concluidas} de ${tarefas.length} concluídas (${progresso}%)`}
-        </p>
+
+        {tarefas.length === 0 ? (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '48px 20px',
+              background: '#fff',
+              borderRadius: 14,
+              marginTop: 20,
+            }}
+          >
+            <span
+              style={{
+                display: 'inline-grid',
+                placeItems: 'center',
+                width: 48,
+                height: 48,
+                borderRadius: 12,
+                background: '#ecfdf5',
+                color: corDestaque,
+                marginBottom: 16,
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m9 11 3 3L22 4" />
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+              </svg>
+            </span>
+            <p style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', marginBottom: 6 }}>
+              Nenhuma tarefa por aqui ainda
+            </p>
+            <p style={{ fontSize: 13, color: '#888', maxWidth: 320, margin: '0 auto' }}>
+              Peça um checklist de prazos pro Admitly no chat e adicione os itens aqui pra acompanhar seu progresso.
+            </p>
+          </div>
+        ) : (
+          <p style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>
+            {`${concluidas} de ${tarefas.length} concluídas (${progresso}%)`}
+          </p>
+        )}
 
         {tarefas.map((t) => (
           <div
