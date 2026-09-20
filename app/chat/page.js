@@ -93,6 +93,7 @@ export default function Chat() {
   const [userId, setUserId] = useState(null)
   const [carregandoHistorico, setCarregandoHistorico] = useState(true)
   const [aviso, setAviso] = useState('')
+  const [menuAberto, setMenuAberto] = useState(false)
   const fimDasMensagens = useRef(null)
 
   const corDestaque = '#10b981'
@@ -158,6 +159,11 @@ export default function Chat() {
 
     iniciar()
   }, [router])
+
+  const sair = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
   const adicionarTarefa = async (titulo) => {
     if (!userId) return
@@ -261,6 +267,7 @@ export default function Chat() {
           justifyContent: 'space-between',
           padding: '14px 20px',
           borderBottom: '1px solid #e5e2dc',
+          position: 'relative',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -286,25 +293,85 @@ export default function Chat() {
             <span style={{ color: corDestaque }}>ly</span>
           </span>
         </div>
-        <a
-          href="/aplicacoes"
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            color: corContraste,
-            textDecoration: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-          }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
-            <path d="M22 10v6" />
-            <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
-          </svg>
-          Minhas aplicações
-        </a>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <a
+            href="/aplicacoes"
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: corContraste,
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
+              <path d="M22 10v6" />
+              <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
+            </svg>
+            Minhas aplicações
+          </a>
+
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setMenuAberto((v) => !v)}
+              aria-label="Menu da conta"
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                border: '1px solid #e5e2dc',
+                background: '#fff',
+                cursor: 'pointer',
+                display: 'grid',
+                placeItems: 'center',
+                color: corContraste,
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </button>
+            {menuAberto && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 40,
+                  right: 0,
+                  background: '#fff',
+                  border: '1px solid #e5e2dc',
+                  borderRadius: 10,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                  overflow: 'hidden',
+                  zIndex: 10,
+                }}
+              >
+                <button
+                  onClick={sair}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    padding: '10px 18px',
+                    border: 'none',
+                    background: 'transparent',
+                    color: '#dc2626',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    textAlign: 'left',
+                  }}
+                >
+                  Sair da conta
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </header>
 
       {aviso && (
