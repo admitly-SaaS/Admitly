@@ -488,6 +488,20 @@ export default function Chat() {
                   zIndex: 10,
                 }}
               >
+                <a
+                  href="/perfil"
+                  style={{
+                    display: 'block',
+                    padding: '10px 18px',
+                    color: corContraste,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Meu perfil acadêmico
+                </a>
                 <button
                   onClick={sair}
                   style={{

@@ -76,12 +76,32 @@ Prefira respostas objetivas e bem divididas, evitando textos muito longos de uma
 ## Limites
 Você não substitui um mentor humano ou consultor de intercâmbio para decisões finais de alto risco (como escolha final de universidade ou vistos) — nesses casos, incentive o aluno a buscar apoio humano complementar, mas continue ajudando com o que estiver ao seu alcance.`
 
-function montarContexto(aplicacoes, tarefas) {
-  if ((!aplicacoes || aplicacoes.length === 0) && (!tarefas || tarefas.length === 0)) {
+function montarContexto(perfil, aplicacoes, tarefas) {
+  const temPerfil = perfil && Object.values(perfil).some(Boolean)
+  if (!temPerfil && (!aplicacoes || aplicacoes.length === 0) && (!tarefas || tarefas.length === 0)) {
     return ''
   }
 
   let contexto = '\n\n## Situação atual do aluno (dados salvos, não repita perguntas sobre isso)\n'
+
+  if (temPerfil) {
+    contexto += 'Perfil acadêmico informado pelo aluno:\n'
+    const camposPerfil = {
+      objetivo: 'Objetivo',
+      idade: 'Idade',
+      anoEscolar: 'Ano escolar',
+      areaInteresse: 'Área ou curso de interesse',
+      notas: 'Notas/desempenho',
+      atividades: 'Atividades extracurriculares',
+      orcamento: 'Orçamento',
+      paisPreferencia: 'País ou região de preferência',
+      nivelIngles: 'Nível de inglês',
+    }
+
+    Object.entries(camposPerfil).forEach(([campo, rotulo]) => {
+      if (perfil[campo]) contexto += `- ${rotulo}: ${perfil[campo]}\n`
+    })
+  }
 
   if (aplicacoes && aplicacoes.length > 0) {
     contexto += 'Universidades/programas que o aluno já está de olho:\n'
@@ -146,7 +166,8 @@ export async function POST(request) {
     .select('title, done')
     .eq('user_id', user.id)
 
-  const promptComContexto = PROMPT_SISTEMA + montarContexto(aplicacoes, tarefas)
+  const perfil = user.user_metadata?.perfil_academico || {}
+  const promptComContexto = PROMPT_SISTEMA + montarContexto(perfil, aplicacoes, tarefas)
 
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
   const model = genAI.getGenerativeModel({
