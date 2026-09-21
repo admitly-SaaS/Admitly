@@ -518,7 +518,6 @@ export default function Chat() {
         </div>
       )}
 
-      <React.Fragment>
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px 0' }}>
         <div style={{ maxWidth: 700, margin: '0 auto', padding: '0 20px' }}>
           {mensagens.map((msg, i) => (
@@ -629,7 +628,6 @@ export default function Chat() {
           </p>
         </div>
       </div>
-      </React.Fragment>
     </div>
   )
 }
