@@ -336,6 +336,53 @@ export default function Aplicacoes() {
                     placeholder="Ex: Need-based"
                     onBlur={(value) => atualizarDetalhe(ap.id, 'scholarship', value)}
                   />
+                  <DetalheAplicacao
+                    label="Link oficial de admissões"
+                    value={ap.details?.officialApplicationUrl || ''}
+                    placeholder="https://..."
+                    type="url"
+                    onBlur={(value) => atualizarDetalhe(ap.id, 'officialApplicationUrl', value)}
+                  />
+                  <DetalheAplicacao
+                    label="Link oficial de requisitos"
+                    value={ap.details?.officialRequirementsUrl || ''}
+                    placeholder="https://..."
+                    type="url"
+                    onBlur={(value) => atualizarDetalhe(ap.id, 'officialRequirementsUrl', value)}
+                  />
+                  <DetalheAplicacao
+                    label="Link oficial de bolsas"
+                    value={ap.details?.officialFinancialAidUrl || ''}
+                    placeholder="https://..."
+                    type="url"
+                    onBlur={(value) => atualizarDetalhe(ap.id, 'officialFinancialAidUrl', value)}
+                  />
+                  <DetalheAplicacao
+                    label="Última verificação"
+                    value={ap.details?.lastVerifiedAt || ''}
+                    type="date"
+                    onBlur={(value) => atualizarDetalhe(ap.id, 'lastVerifiedAt', value)}
+                  />
+                </div>
+              )}
+
+              {(ap.details?.officialApplicationUrl || ap.details?.officialRequirementsUrl || ap.details?.officialFinancialAidUrl) && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 12, fontSize: 12 }}>
+                  {[
+                    ['Admissões', ap.details.officialApplicationUrl],
+                    ['Requisitos', ap.details.officialRequirementsUrl],
+                    ['Bolsas', ap.details.officialFinancialAidUrl],
+                  ].filter(([, url]) => url).map(([label, url]) => (
+                    <a
+                      key={label}
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: corDestaque, fontWeight: 600, textDecoration: 'none' }}
+                    >
+                      {label} ↗
+                    </a>
+                  ))}
                 </div>
               )}
 
@@ -471,7 +518,7 @@ export default function Aplicacoes() {
   )
 }
 
-function DetalheAplicacao({ label, value, placeholder, onBlur }) {
+function DetalheAplicacao({ label, value, placeholder, type = 'text', onBlur }) {
   const [valor, setValor] = useState(value)
 
   useEffect(() => {
@@ -482,7 +529,7 @@ function DetalheAplicacao({ label, value, placeholder, onBlur }) {
     <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#57534e' }}>
       {label}
       <input
-        type="text"
+        type={type}
         value={valor}
         onChange={(event) => setValor(event.target.value)}
         onBlur={() => onBlur(valor)}
@@ -504,3 +551,4 @@ function DetalheAplicacao({ label, value, placeholder, onBlur }) {
     </label>
   )
 }
+

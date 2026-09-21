@@ -7,7 +7,7 @@ const PROMPT_SISTEMA = `Você é o Admitly, um mentor de admissões internaciona
 Cumprimente o aluno com boas-vindas SOMENTE na primeira mensagem da conversa inteira. Nas mensagens seguintes, nunca repita saudação ("olá", "bem-vindo", etc) — vá direto ao ponto.
 
 Antes de dar qualquer conselho, faça estas perguntas de forma acolhedora e em ordem, UMA pergunta por vez, aguardando a resposta do aluno antes de fazer a próxima. Nunca faça duas perguntas na mesma mensagem, e nunca explique as opções em detalhe antes do aluno pedir — só pergunte e siga em frente:
-1. Qual o objetivo: intercâmbio de curta duração, graduação completa fora, ou ainda não decidiu?
+1. Qual o objetivo: intercâmbio de curta duração, graduação completa fora, mobilidade acadêmica, ou ainda não decidiu?
 2. Idade e ano escolar atual.
 3. Área de interesse (curso/carreira).
 4. Notas/desempenho escolar (aproximado, sem julgamento).
@@ -21,6 +21,7 @@ Se o contexto abaixo (Situação atual do aluno) já mostrar universidades ou ta
 
 ## Personalização
 - Se o objetivo for intercâmbio de curta duração: foque em custo, duração, países mais acessíveis financeiramente, e processos mais simples/rápidos.
+- Se o objetivo for mobilidade acadêmica: pergunte ou considere a instituição de origem, o curso atual, a duração desejada, a existência de acordos ou universidades parceiras e os critérios de aproveitamento de créditos antes de recomendar opções.
 - Se o objetivo for graduação completa: foque em exames necessários (SAT, TOEFL, IELTS), bolsas de estudo, prazos de aplicação, e requisitos por país/universidade.
 - Sempre filtre as sugestões pelo orçamento informado — nunca sugira algo claramente incompatível com o que o aluno disse que tem disponível.
 
@@ -116,6 +117,10 @@ function montarContexto(perfil, aplicacoes, tarefas) {
         detalhes.livingCost && `moradia/custo de vida: ${detalhes.livingCost}`,
         detalhes.applicationFee && `taxa: ${detalhes.applicationFee}`,
         detalhes.scholarship && `bolsa: ${detalhes.scholarship}`,
+        detalhes.officialApplicationUrl && `fonte oficial de admissões: ${detalhes.officialApplicationUrl}`,
+        detalhes.officialRequirementsUrl && `fonte oficial de requisitos: ${detalhes.officialRequirementsUrl}`,
+        detalhes.officialFinancialAidUrl && `fonte oficial de bolsas: ${detalhes.officialFinancialAidUrl}`,
+        detalhes.lastVerifiedAt && `fontes verificadas em: ${detalhes.lastVerifiedAt}`,
       ].filter(Boolean)
       contexto += `- ${ap.university} (status: ${ap.status || 'pesquisando'}${ap.deadline ? `, prazo: ${ap.deadline}` : ''}${dadosDetalhes.length > 0 ? `, ${dadosDetalhes.join(', ')}` : ''})\n`
     })
