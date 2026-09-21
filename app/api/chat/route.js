@@ -7,7 +7,7 @@ const PROMPT_SISTEMA = `Você é o Admitly, um mentor de admissões internaciona
 Cumprimente o aluno com boas-vindas SOMENTE na primeira mensagem da conversa inteira. Nas mensagens seguintes, nunca repita saudação ("olá", "bem-vindo", etc) — vá direto ao ponto.
 
 Antes de dar qualquer conselho, faça estas perguntas de forma acolhedora e em ordem, UMA pergunta por vez, aguardando a resposta do aluno antes de fazer a próxima. Nunca faça duas perguntas na mesma mensagem, e nunca explique as opções em detalhe antes do aluno pedir — só pergunte e siga em frente:
-1. Qual o objetivo: intercâmbio de curta duração, graduação completa fora, mobilidade acadêmica, ou ainda não decidiu?
+1. Qual o objetivo: intercâmbio de curta duração, graduação completa fora, ou ainda não decidiu?
 2. Idade e ano escolar atual.
 3. Área de interesse (curso/carreira).
 4. Notas/desempenho escolar (aproximado, sem julgamento).
@@ -17,11 +17,10 @@ Antes de dar qualquer conselho, faça estas perguntas de forma acolhedora e em o
 
 Guarde essas respostas mentalmente durante toda a conversa — nunca peça a mesma informação duas vezes, e nunca volte a explicar o que o aluno já respondeu.
 
-Se o contexto abaixo (Situação atual do aluno) já mostrar universidades ou tarefas salvas, considere que o aluno já passou por parte dessa entrevista antes — não repita perguntas cujas respostas já dá pra inferir dali.
+Se o contexto abaixo (Perfil do aluno / Situação atual do aluno) já mostrar respostas, considere que o aluno já passou por essa entrevista antes — não repita perguntas cujas respostas já estão ali.
 
 ## Personalização
 - Se o objetivo for intercâmbio de curta duração: foque em custo, duração, países mais acessíveis financeiramente, e processos mais simples/rápidos.
-- Se o objetivo for mobilidade acadêmica: pergunte ou considere a instituição de origem, o curso atual, a duração desejada, a existência de acordos ou universidades parceiras e os critérios de aproveitamento de créditos antes de recomendar opções.
 - Se o objetivo for graduação completa: foque em exames necessários (SAT, TOEFL, IELTS), bolsas de estudo, prazos de aplicação, e requisitos por país/universidade.
 - Sempre filtre as sugestões pelo orçamento informado — nunca sugira algo claramente incompatível com o que o aluno disse que tem disponível.
 
@@ -33,15 +32,6 @@ Se o contexto abaixo (Situação atual do aluno) já mostrar universidades ou ta
   - Sempre que o cronograma for de curto prazo, seja direto sobre a urgência sem gerar pânico — apresente as próximas ações mais críticas primeiro.
 - Simulador de competitividade: com base nas notas e atividades extracurriculares informadas, dê uma estimativa honesta e realista de quão competitivo é o perfil do aluno para o objetivo dele — sem prometer aprovação, mas indicando pontos fortes e o que pode melhorar.
 - Rascunho de carta de motivação/personal statement: se o aluno pedir, gere um primeiro rascunho baseado no que ele já contou sobre si, deixando claro que é um ponto de partida para ele revisar e personalizar, nunca a versão final.
-
-## Quando sugerir tarefas
-Não gere novas tarefas automaticamente em toda resposta. Só sugira tarefas no formato "TAREFA: " quando:
-1. O aluno pedir explicitamente um checklist, cronograma, próximos passos ou tarefas; ou
-2. A conversa avançar naturalmente para uma nova etapa que exija uma ação concreta e relevante.
-
-Uma simples confirmação do aluno, como "ok", "entendi" ou "perfeito", não é um pedido de novas tarefas. Nesses casos, responda normalmente, sem adicionar linhas "TAREFA: ", a menos que exista algo genuinamente relevante e novo que precise ser feito.
-
-Não repita tarefas já sugeridas ou salvas. Antes de criar uma nova tarefa, verifique se ela já aparece no contexto de tarefas pendentes do aluno.
 
 ## Formato do checklist de prazos
 Sempre que você mencionar um cronograma, checklist de prazos ou lista de próximos passos com mais de um item, formate CADA item começando exatamente com "TAREFA: " (maiúsculas, dois pontos, espaço), um item por linha.
@@ -61,6 +51,9 @@ TAREFA: Pesquisar o nível de inglês necessário para TOEFL ou IELTS
 Quando o aluno mencionar claramente uma universidade ou programa específico que pretende aplicar (ex: "quero aplicar pra Stanford", "tenho interesse no MIT"), inclua uma linha isolada no formato:
 UNIVERSIDADE: Nome da Universidade
 Use esse formato apenas quando o aluno demonstrar intenção real de aplicar, não apenas mencionar de passagem ou perguntar informações gerais sobre a instituição. Não repita esse formato para universidades que já aparecem na lista de "Situação atual do aluno" abaixo — elas já foram adicionadas.
+
+## Idioma
+Responda sempre no mesmo idioma que o aluno usar para escrever, mesmo que seja diferente do português (ex: espanhol, inglês). Mantenha esse idioma durante toda a conversa, a menos que o aluno troque de idioma primeiro.
 
 ## Precisão da informação
 Ao citar prazos, exigências ou valores específicos de uma universidade ou exame, sempre avise que esses dados podem mudar e recomende que o aluno confirme no site oficial antes de tomar decisões — nunca afirme uma data ou valor como 100% garantido.
@@ -87,60 +80,36 @@ Prefira respostas objetivas e bem divididas, evitando textos muito longos de uma
 Você não substitui um mentor humano ou consultor de intercâmbio para decisões finais de alto risco (como escolha final de universidade ou vistos) — nesses casos, incentive o aluno a buscar apoio humano complementar, mas continue ajudando com o que estiver ao seu alcance.`
 
 function montarContexto(perfil, aplicacoes, tarefas) {
-  const temPerfil = perfil && Object.values(perfil).some(Boolean)
-  if (!temPerfil && (!aplicacoes || aplicacoes.length === 0) && (!tarefas || tarefas.length === 0)) {
-    return ''
+  let contexto = ''
+
+  if (perfil && Object.values(perfil).some((v) => v)) {
+    contexto += '\n\n## Perfil do aluno (já preenchido, não repita essas perguntas)\n'
+    if (perfil.objetivo) contexto += `- Objetivo: ${perfil.objetivo}\n`
+    if (perfil.idade) contexto += `- Idade: ${perfil.idade}\n`
+    if (perfil.anoEscolar) contexto += `- Ano escolar: ${perfil.anoEscolar}\n`
+    if (perfil.areaInteresse) contexto += `- Área de interesse: ${perfil.areaInteresse}\n`
+    if (perfil.notas) contexto += `- Notas: ${perfil.notas}\n`
+    if (perfil.atividades) contexto += `- Atividades extracurriculares: ${perfil.atividades}\n`
+    if (perfil.orcamento) contexto += `- Orçamento: ${perfil.orcamento}\n`
+    if (perfil.paisPreferencia) contexto += `- País de preferência: ${perfil.paisPreferencia}\n`
+    if (perfil.nivelIngles) contexto += `- Nível de inglês: ${perfil.nivelIngles}\n`
   }
 
-  let contexto = '\n\n## Situação atual do aluno (dados salvos, não repita perguntas sobre isso)\n'
-
-  if (temPerfil) {
-    contexto += 'Perfil acadêmico informado pelo aluno:\n'
-    const camposPerfil = {
-      objetivo: 'Objetivo',
-      idade: 'Idade',
-      anoEscolar: 'Ano escolar',
-      areaInteresse: 'Área ou curso de interesse',
-      notas: 'Notas/desempenho',
-      atividades: 'Atividades extracurriculares',
-      orcamento: 'Orçamento',
-      paisPreferencia: 'País ou região de preferência',
-      nivelIngles: 'Nível de inglês',
+  if ((aplicacoes && aplicacoes.length > 0) || (tarefas && tarefas.length > 0)) {
+    contexto += '\n## Situação atual do aluno (dados salvos, não repita perguntas sobre isso)\n'
+    if (aplicacoes && aplicacoes.length > 0) {
+      contexto += 'Universidades/programas que o aluno já está de olho:\n'
+      aplicacoes.forEach((ap) => {
+        contexto += `- ${ap.university} (status: ${ap.status || 'pesquisando'}${ap.deadline ? `, prazo: ${ap.deadline}` : ''})\n`
+      })
     }
-
-    Object.entries(camposPerfil).forEach(([campo, rotulo]) => {
-      if (perfil[campo]) contexto += `- ${rotulo}: ${perfil[campo]}\n`
-    })
-  }
-
-  if (aplicacoes && aplicacoes.length > 0) {
-    contexto += 'Universidades/programas que o aluno já está de olho:\n'
-    aplicacoes.forEach((ap) => {
-      const detalhes = ap.details || {}
-      const dadosDetalhes = [
-        detalhes.course && `curso: ${detalhes.course}`,
-        detalhes.location && `local: ${detalhes.location}`,
-        detalhes.intake && `entrada: ${detalhes.intake}`,
-        detalhes.applicationType && `tipo: ${detalhes.applicationType}`,
-        detalhes.tuition && `tuition: ${detalhes.tuition}`,
-        detalhes.livingCost && `moradia/custo de vida: ${detalhes.livingCost}`,
-        detalhes.applicationFee && `taxa: ${detalhes.applicationFee}`,
-        detalhes.scholarship && `bolsa: ${detalhes.scholarship}`,
-        detalhes.officialApplicationUrl && `fonte oficial de admissões: ${detalhes.officialApplicationUrl}`,
-        detalhes.officialRequirementsUrl && `fonte oficial de requisitos: ${detalhes.officialRequirementsUrl}`,
-        detalhes.officialFinancialAidUrl && `fonte oficial de bolsas: ${detalhes.officialFinancialAidUrl}`,
-        detalhes.lastVerifiedAt && `fontes verificadas em: ${detalhes.lastVerifiedAt}`,
-      ].filter(Boolean)
-      contexto += `- ${ap.university} (status: ${ap.status || 'pesquisando'}${ap.deadline ? `, prazo: ${ap.deadline}` : ''}${dadosDetalhes.length > 0 ? `, ${dadosDetalhes.join(', ')}` : ''})\n`
-    })
-  }
-
-  const tarefasPendentes = (tarefas || []).filter((t) => !t.done)
-  if (tarefasPendentes.length > 0) {
-    contexto += 'Tarefas ainda pendentes:\n'
-    tarefasPendentes.forEach((t) => {
-      contexto += `- ${t.title}\n`
-    })
+    const tarefasPendentes = (tarefas || []).filter((t) => !t.done)
+    if (tarefasPendentes.length > 0) {
+      contexto += 'Tarefas ainda pendentes:\n'
+      tarefasPendentes.forEach((t) => {
+        contexto += `- ${t.title}\n`
+      })
+    }
   }
 
   return contexto
@@ -183,7 +152,7 @@ export async function POST(request) {
 
   const { data: aplicacoes } = await supabase
     .from('applications')
-    .select('university, status, deadline, details')
+    .select('university, status, deadline')
     .eq('user_id', user.id)
 
   const { data: tarefas } = await supabase
@@ -191,8 +160,7 @@ export async function POST(request) {
     .select('title, done')
     .eq('user_id', user.id)
 
-  const perfil = user.user_metadata?.perfil_academico || {}
-  const promptComContexto = PROMPT_SISTEMA + montarContexto(perfil, aplicacoes, tarefas)
+  const promptComContexto = PROMPT_SISTEMA + montarContexto(user.user_metadata?.perfil_academico, aplicacoes, tarefas)
 
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
   const model = genAI.getGenerativeModel({
