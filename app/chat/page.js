@@ -236,49 +236,71 @@ export default function Chat() {
     setInput('')
     setCarregando(true)
 
-    await supabase.from('messages').insert({
-      conversation_id: conversationId,
-      sender: 'usuario',
-      content: textoUsuario,
-    })
-
-    const { data: { session } } = await supabase.auth.getSession()
-
-    const resposta = await fetch('/api/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ mensagem: textoUsuario, historico: mensagens }),
-    })
-
-    setMensagens((prev) => [...prev, { remetente: 'admitly', texto: '' }])
-
-    const reader = resposta.body.getReader()
-    const decoder = new TextDecoder()
-    let textoCompleto = ''
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-
-      const pedaco = decoder.decode(value)
-      textoCompleto += pedaco
-      setMensagens((prev) => {
-        const copia = [...prev]
-        copia[copia.length - 1] = { remetente: 'admitly', texto: copia[copia.length - 1].texto + pedaco }
-        return copia
+    try {
+      await supabase.from('messages').insert({
+        conversation_id: conversationId,
+        sender: 'usuario',
+        content: textoUsuario,
       })
+
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        throw new Error('Sua sessão expirou. Entre novamente para continuar.')
+      }
+
+      const resposta = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ mensagem: textoUsuario, historico: mensagens }),
+      })
+
+      if (!resposta.ok || !resposta.body) {
+        let detalhe = ''
+        try {
+          const erroApi = await resposta.json()
+          detalhe = erroApi.erro || ''
+        } catch {
+          // A resposta pode não conter JSON quando o servidor falha.
+        }
+        throw new Error(detalhe || 'O mentor não conseguiu responder agora.')
+      }
+
+      setMensagens((prev) => [...prev, { remetente: 'admitly', texto: '' }])
+
+      const reader = resposta.body.getReader()
+      const decoder = new TextDecoder()
+      let textoCompleto = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const pedaco = decoder.decode(value, { stream: true })
+        textoCompleto += pedaco
+        setMensagens((prev) => {
+          const copia = [...prev]
+          const ultimaMensagem = copia[copia.length - 1]
+          if (ultimaMensagem?.remetente === 'admitly') {
+            copia[copia.length - 1] = { remetente: 'admitly', texto: ultimaMensagem.texto + pedaco }
+          }
+          return copia
+        })
+      }
+
+      await supabase.from('messages').insert({
+        conversation_id: conversationId,
+        sender: 'admitly',
+        content: textoCompleto,
+      })
+    } catch (error) {
+      const mensagemErro = error instanceof Error ? error.message : 'O mentor não conseguiu responder agora.'
+      setMensagens((prev) => [...prev, { remetente: 'admitly', texto: `Não consegui responder: ${mensagemErro}` }])
+    } finally {
+      setCarregando(false)
     }
-
-    await supabase.from('messages').insert({
-      conversation_id: conversationId,
-      sender: 'admitly',
-      content: textoCompleto,
-    })
-
-    setCarregando(false)
   }
 
   if (carregandoHistorico) {

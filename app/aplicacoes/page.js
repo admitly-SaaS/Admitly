@@ -15,6 +15,7 @@ export default function Aplicacoes() {
   const [novaUniversidade, setNovaUniversidade] = useState('')
   const [novasTarefas, setNovasTarefas] = useState({})
   const [novaTarefaGeral, setNovaTarefaGeral] = useState('')
+  const [aplicacoesAbertas, setAplicacoesAbertas] = useState({})
 
   const corDestaque = '#10b981'
   const corContraste = '#57534e'
@@ -70,6 +71,13 @@ export default function Aplicacoes() {
   const atualizarPrazo = async (id, deadline) => {
     setAplicacoes((prev) => prev.map((a) => (a.id === id ? { ...a, deadline } : a)))
     await supabase.from('applications').update({ deadline: deadline || null }).eq('id', id)
+  }
+
+  const atualizarDetalhe = async (id, campo, valor) => {
+    const aplicacaoAtual = aplicacoes.find((ap) => ap.id === id)
+    const details = { ...(aplicacaoAtual?.details || {}), [campo]: valor }
+    setAplicacoes((prev) => prev.map((a) => (a.id === id ? { ...a, details } : a)))
+    await supabase.from('applications').update({ details }).eq('id', id)
   }
 
   const adicionarTarefa = async (applicationId, titulo) => {
@@ -193,6 +201,10 @@ export default function Aplicacoes() {
 
         {aplicacoes.map((ap) => {
           const tarefasDaAplicacao = tarefas.filter((t) => t.application_id === ap.id)
+          const tarefasConcluidas = tarefasDaAplicacao.filter((t) => t.done).length
+          const progresso = tarefasDaAplicacao.length > 0
+            ? Math.round((tarefasConcluidas / tarefasDaAplicacao.length) * 100)
+            : 0
           return (
             <div
               key={ap.id}
@@ -246,6 +258,97 @@ export default function Aplicacoes() {
                 />
               </div>
 
+              <button
+                type="button"
+                onClick={() => setAplicacoesAbertas((prev) => ({ ...prev, [ap.id]: !prev[ap.id] }))}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  color: corContraste,
+                  padding: 0,
+                  marginBottom: aplicacoesAbertas[ap.id] ? 14 : 0,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                {aplicacoesAbertas[ap.id] ? '− Ocultar detalhes' : '+ Completar detalhes da candidatura'}
+              </button>
+
+              {aplicacoesAbertas[ap.id] && (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                    gap: 10,
+                    padding: 14,
+                    marginBottom: 16,
+                    borderRadius: 10,
+                    background: '#fafafa',
+                    border: '1px solid #eee',
+                  }}
+                >
+                  <DetalheAplicacao
+                    label="Curso ou programa"
+                    value={ap.details?.course || ''}
+                    placeholder="Ex: Engenharia"
+                    onBlur={(value) => atualizarDetalhe(ap.id, 'course', value)}
+                  />
+                  <DetalheAplicacao
+                    label="País e cidade"
+                    value={ap.details?.location || ''}
+                    placeholder="Ex: Boston, EUA"
+                    onBlur={(value) => atualizarDetalhe(ap.id, 'location', value)}
+                  />
+                  <DetalheAplicacao
+                    label="Período de entrada"
+                    value={ap.details?.intake || ''}
+                    placeholder="Ex: Fall 2027"
+                    onBlur={(value) => atualizarDetalhe(ap.id, 'intake', value)}
+                  />
+                  <DetalheAplicacao
+                    label="Tipo de candidatura"
+                    value={ap.details?.applicationType || ''}
+                    placeholder="Ex: Graduação"
+                    onBlur={(value) => atualizarDetalhe(ap.id, 'applicationType', value)}
+                  />
+                  <DetalheAplicacao
+                    label="Mensalidade ou tuition"
+                    value={ap.details?.tuition || ''}
+                    placeholder="Ex: US$ 40 mil/ano"
+                    onBlur={(value) => atualizarDetalhe(ap.id, 'tuition', value)}
+                  />
+                  <DetalheAplicacao
+                    label="Moradia e custo de vida"
+                    value={ap.details?.livingCost || ''}
+                    placeholder="Ex: US$ 18 mil/ano"
+                    onBlur={(value) => atualizarDetalhe(ap.id, 'livingCost', value)}
+                  />
+                  <DetalheAplicacao
+                    label="Taxa de candidatura"
+                    value={ap.details?.applicationFee || ''}
+                    placeholder="Ex: US$ 90"
+                    onBlur={(value) => atualizarDetalhe(ap.id, 'applicationFee', value)}
+                  />
+                  <DetalheAplicacao
+                    label="Bolsa ou auxílio"
+                    value={ap.details?.scholarship || ''}
+                    placeholder="Ex: Need-based"
+                    onBlur={(value) => atualizarDetalhe(ap.id, 'scholarship', value)}
+                  />
+                </div>
+              )}
+
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#888', marginBottom: 5 }}>
+                  <span>Progresso da candidatura</span>
+                  <span>{tarefasConcluidas}/{tarefasDaAplicacao.length} concluídas</span>
+                </div>
+                <div style={{ height: 6, borderRadius: 99, background: '#e5e7eb', overflow: 'hidden' }}>
+                  <div style={{ width: `${progresso}%`, height: '100%', borderRadius: 99, background: corDestaque }} />
+                </div>
+              </div>
+
               {tarefasDaAplicacao.map((t) => (
                 <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
                   <input
@@ -272,7 +375,7 @@ export default function Aplicacoes() {
                   value={novasTarefas[ap.id] || ''}
                   onChange={(e) => setNovasTarefas((prev) => ({ ...prev, [ap.id]: e.target.value }))}
                   onKeyDown={(e) => e.key === 'Enter' && adicionarTarefa(ap.id, novasTarefas[ap.id])}
-                  placeholder="Nova tarefa para esta universidade..."
+                  placeholder="Adicionar requisito ou tarefa..."
                   style={{
                     flex: 1,
                     padding: '6px 10px',
@@ -365,5 +468,39 @@ export default function Aplicacoes() {
         )}
       </div>
     </div>
+  )
+}
+
+function DetalheAplicacao({ label, value, placeholder, onBlur }) {
+  const [valor, setValor] = useState(value)
+
+  useEffect(() => {
+    setValor(value)
+  }, [value])
+
+  return (
+    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#57534e' }}>
+      {label}
+      <input
+        type="text"
+        value={valor}
+        onChange={(event) => setValor(event.target.value)}
+        onBlur={() => onBlur(valor)}
+        placeholder={placeholder}
+        style={{
+          display: 'block',
+          width: '100%',
+          boxSizing: 'border-box',
+          marginTop: 5,
+          padding: '8px 10px',
+          border: '1px solid #ddd',
+          borderRadius: 8,
+          background: '#fff',
+          color: '#1a1a1a',
+          fontSize: 13,
+          fontWeight: 400,
+        }}
+      />
+    </label>
   )
 }

@@ -106,7 +106,18 @@ function montarContexto(perfil, aplicacoes, tarefas) {
   if (aplicacoes && aplicacoes.length > 0) {
     contexto += 'Universidades/programas que o aluno já está de olho:\n'
     aplicacoes.forEach((ap) => {
-      contexto += `- ${ap.university} (status: ${ap.status || 'pesquisando'}${ap.deadline ? `, prazo: ${ap.deadline}` : ''})\n`
+      const detalhes = ap.details || {}
+      const dadosDetalhes = [
+        detalhes.course && `curso: ${detalhes.course}`,
+        detalhes.location && `local: ${detalhes.location}`,
+        detalhes.intake && `entrada: ${detalhes.intake}`,
+        detalhes.applicationType && `tipo: ${detalhes.applicationType}`,
+        detalhes.tuition && `tuition: ${detalhes.tuition}`,
+        detalhes.livingCost && `moradia/custo de vida: ${detalhes.livingCost}`,
+        detalhes.applicationFee && `taxa: ${detalhes.applicationFee}`,
+        detalhes.scholarship && `bolsa: ${detalhes.scholarship}`,
+      ].filter(Boolean)
+      contexto += `- ${ap.university} (status: ${ap.status || 'pesquisando'}${ap.deadline ? `, prazo: ${ap.deadline}` : ''}${dadosDetalhes.length > 0 ? `, ${dadosDetalhes.join(', ')}` : ''})\n`
     })
   }
 
@@ -158,7 +169,7 @@ export async function POST(request) {
 
   const { data: aplicacoes } = await supabase
     .from('applications')
-    .select('university, status, deadline')
+    .select('university, status, deadline, details')
     .eq('user_id', user.id)
 
   const { data: tarefas } = await supabase
