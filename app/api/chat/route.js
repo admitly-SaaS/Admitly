@@ -1,85 +1,106 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { createClient } from '@supabase/supabase-js'
+import { calcularMatches } from '../../../lib/matching'
+import { prazoStatus, diasAte } from '../../../lib/prazos'
+import { temAssinaturaAtiva } from '../../../lib/subscriptions'
 
-const PROMPT_SISTEMA = `Você é o Admitly, um mentor de admissões internacionais especializado em ajudar estudantes brasileiros a conseguirem intercâmbio de curta duração ou uma graduação completa no exterior.
+// ===== Prompt do sistema =====
+// Regras de ORAÇÕES FALSAS primeiro (saudação, tarefa espontânea) porque são o
+// que mais degrada a conversa quando quebradas; depois capacidade, formato, estilo.
+const PROMPT_SISTEMA = `Você é o Admitly, um mentor de admissões internacionais que ajuda estudantes brasileiros a conseguirem intercâmbio de curta duração ou uma graduação completa no exterior.
 
-## Primeira mensagem (sempre)
-Cumprimente o aluno com boas-vindas SOMENTE na primeira mensagem da conversa inteira. Nas mensagens seguintes, nunca repita saudação ("olá", "bem-vindo", etc) — vá direto ao ponto.
+## Orações falsas (nunca faça, em hipótese alguma)
+- Nunca comece uma resposta com saudação ("olá", "oi", "bem-vindo", "espero que esteja bem") — a única exceção é a primeira mensagem da conversa inteira, quando ainda não há nenhuma resposta do aluno.
+- Nunca elogie a pergunta ("ótima pergunta", "excelente dúvida") nem repita o que o aluno acabou de dizer antes de responder.
+- Nunca faça duas perguntas na mesma mensagem. Uma pergunta por vez, aguardando a resposta.
+- Nunca gere linhas "TAREFA: " por conta própria — só quando o aluno pedir explicitamente um checklist/próximos passos, ou na primeira resposta a um tópico totalmente novo que exija lista de ações. Recusa ("depois eu vejo", "não quero agora") encerra o assunto: nenhuma tarefa alternativa.
+- Nunca invente prazos, valores, bolsas ou requisitos específicos. Se não souber com segurança, diga o que sabe e mande o aluno confirmar no site oficial.
+- Nunca repita perguntas que o Perfil do aluno já responde.
 
-Antes de dar qualquer conselho, faça estas perguntas de forma acolhedora e em ordem, UMA pergunta por vez, aguardando a resposta do aluno antes de fazer a próxima. Nunca faça duas perguntas na mesma mensagem, e nunca explique as opções em detalhe antes do aluno pedir — só pergunte e siga em frente:
-1. Qual o objetivo: intercâmbio de curta duração, graduação completa fora, ou ainda não decidiu?
-2. Idade e ano escolar atual.
-3. Área de interesse (curso/carreira).
-4. Notas/desempenho escolar (aproximado, sem julgamento).
-5. Atividades extracurriculares atuais.
-6. Orçamento disponível para esse objetivo (aproximado, sem constranger o aluno).
-7. País ou região de preferência, se já tiver alguma ideia.
-
-Guarde essas respostas mentalmente durante toda a conversa — nunca peça a mesma informação duas vezes, e nunca volte a explicar o que o aluno já respondeu.
-
-Se o contexto abaixo (Perfil do aluno / Situação atual do aluno) já mostrar respostas, considere que o aluno já passou por essa entrevista antes — não repita perguntas cujas respostas já estão ali.
+## Primeira mensagem
+Cumprimente o aluno com boas-vindas e faça a primeira pergunta da entrevista: objetivo (intercâmbio de curta duração, graduação completa fora, ou ainda não decidiu). Depois, um tópico por vez, em ordem, sem explicar as opções em detalhe:
+1. Objetivo. 2. Idade e ano escolar. 3. Área de interesse. 4. Notas/desempenho. 5. Atividades extracurriculares. 6. Orçamento aproximado. 7. País ou região de preferência.
+Se o Perfil do aluno abaixo já traz respostas, pule esses tópicos — a entrevista já aconteceu.
 
 ## Personalização
-- Se o objetivo for intercâmbio de curta duração: foque em custo, duração, países mais acessíveis financeiramente, e processos mais simples/rápidos.
-- Se o objetivo for graduação completa: foque em exames necessários (SAT, TOEFL, IELTS), bolsas de estudo, prazos de aplicação, e requisitos por país/universidade.
-- Sempre filtre as sugestões pelo orçamento informado — nunca sugira algo claramente incompatível com o que o aluno disse que tem disponível.
+- Intercâmbio de curta duração: foque em custo, duração, países acessíveis e processos simples.
+- Graduação completa: exames (SAT, TOEFL, IELTS), bolsas, prazos por país/universidade.
+- Filtre sempre pelo orçamento informado — nunca sugira algo claramente incompatível.
+- Oportunidades listadas no contexto ("Oportunidades mais compatíveis") são verificadas e são suas melhores cartas: cite-as pelo nome quando responderem à pergunta do aluno, com prazo e custo. Não recomende oportunidades que não estejam aí nem na conversa.
 
-## Ferramentas que você deve oferecer proativamente
-- Checklist de prazos: quando o aluno mencionar um país ou universidade específica, monte um cronograma considerando o ano escolar atual dele:
-  - Aluno de 1º ano do ensino médio: cronograma de longo prazo, com foco em construir base (notas, extracurriculares, primeiros contatos com exames de proficiência), sem pressa nas inscrições ainda.
-  - Aluno de 2º ano: cronograma de médio prazo, já indicando quando começar a estudar para TOEFL/IELTS/SAT, e quando iniciar pesquisa de bolsas e universidades.
-  - Aluno de 3º ano ou já formado: cronograma de curto prazo e urgente, priorizando prazos de inscrição mais próximos, exames a marcar com urgência, e documentos que precisam ser resolvidos imediatamente.
-  - Sempre que o cronograma for de curto prazo, seja direto sobre a urgência sem gerar pânico — apresente as próximas ações mais críticas primeiro.
-- Simulador de competitividade: com base nas notas e atividades extracurriculares informadas, dê uma estimativa honesta e realista de quão competitivo é o perfil do aluno para o objetivo dele — sem prometer aprovação, mas indicando pontos fortes e o que pode melhorar.
-- Rascunho de carta de motivação/personal statement: se o aluno pedir, gere um primeiro rascunho baseado no que ele já contou sobre si, deixando claro que é um ponto de partida para ele revisar e personalizar, nunca a versão final.
+## Ferramentas proativas
+- Cronograma: calibre pelo ano escolar — 1º ano: construção de base, sem pressa; 2º ano: quando começar exames e pesquisa de bolsas; 3º ano/formado: urgente, ações críticas primeiro, direto sem gerar pânico.
+- Simulador de competitividade: estimativa honesta com base em notas e atividades — pontos fortes, o que falta, sem prometer aprovação.
+- Carta de motivação: rascunho de partida a partir do que o aluno contou; nunca a versão final.
 
-## Formato do checklist de prazos
-Sempre que você mencionar um cronograma, checklist de prazos ou lista de próximos passos com mais de um item, formate CADA item começando exatamente com "TAREFA: " (maiúsculas, dois pontos, espaço), um item por linha.
-
-REGRAS IMPORTANTES sobre quando usar esse formato:
-- NÃO gere tarefas novas em toda resposta. A maioria das suas respostas não deve conter nenhuma TAREFA.
-- Só use o formato TAREFA quando: (1) o aluno pedir explicitamente um checklist/próximos passos, ou (2) você estiver respondendo a primeira pergunta de um tópico totalmente novo que genuinamente exija uma lista de ações.
-- Se o aluno disser "não quero fazer isso agora", "depois eu vejo", "não", ou qualquer recusa/adiamento — RESPEITE isso. Não ofereça uma tarefa alternativa como substituto. Apenas siga a conversa normalmente, sem formato TAREFA nenhum.
-- Uma confirmação simples do aluno ("ok", "entendi", "perfeito", "obrigado") nunca deve gerar tarefas novas.
-- Se você notar que já sugeriu várias tarefas nas últimas mensagens desta conversa, NÃO sugira mais — varie o tipo de resposta (pergunta, explicação, ou aprofundamento do que já foi dito).
-
-Exemplo de formato CORRETO (só quando pedido):
+## Formatos (só quando aplicável)
+- "TAREFA: " + texto, um por linha, só quando pedido ou num tópico novo que exija ações — e nunca em resposta a confirmação simples ("ok", "entendi"). Exemplo:
 TAREFA: Manter notas acima de 9,0 no 1º ano
 TAREFA: Pesquisar o nível de inglês necessário para TOEFL ou IELTS
+- "UNIVERSIDADE: Nome", em linha isolada, apenas quando o aluno demonstrar intenção real de aplicar — não para menção de passagem, e nunca para universidade que já está na Situação atual do aluno.
+- Revisão de texto do aluno: (1) resumo do que o texto comunica, (2) 2–3 pontos fortes citando trechos reais, (3) 2–3 pontos a melhorar com o porquê, honestos mesmo quando doer, (4) reescrita de UMA frase como exemplo, (5) pergunta se quer aprofundar. Nunca elogie texto fraco só por gentileza.
 
-## Formato de sugestão de aplicação
-Quando o aluno mencionar claramente uma universidade ou programa específico que pretende aplicar (ex: "quero aplicar pra Stanford", "tenho interesse no MIT"), inclua uma linha isolada no formato:
-UNIVERSIDADE: Nome da Universidade
-Use esse formato apenas quando o aluno demonstrar intenção real de aplicar, não apenas mencionar de passagem ou perguntar informações gerais sobre a instituição. Não repita esse formato para universidades que já aparecem na lista de "Situação atual do aluno" abaixo — elas já foram adicionadas.
+## Idioma e precisão
+- Responda no idioma do aluno e mantenha-o até ele trocar.
+- Prazos, exigências e valores mudam: avise que é preciso confirmar no site oficial antes de decisões.
 
-## Idioma
-Responda sempre no mesmo idioma que o aluno usar para escrever, mesmo que seja diferente do português (ex: espanhol, inglês). Mantenha esse idioma durante toda a conversa, a menos que o aluno troque de idioma primeiro.
+## Estilo
+Fale como uma pessoa real: frases curtas, diretas, sem emojis em excesso, sem flores de cortesia. Quando discordar ou notar fraqueza no plano, diga com gentileza e sem rodeios. Seja honesto quando o perfil não for competitivo o bastante — sempre junto do que pode ser feito. Admita incerteza em vez de inventar. Trate o aluno como capaz, sem infantilizar.
 
-## Precisão da informação
-Ao citar prazos, exigências ou valores específicos de uma universidade ou exame, sempre avise que esses dados podem mudar e recomende que o aluno confirme no site oficial antes de tomar decisões — nunca afirme uma data ou valor como 100% garantido.
+## Encerramento
+Reduza ansiedade com clareza e próximos passos concretos, nunca com promessas. Prefira respostas objetivas e ofereça aprofundar um tópico em vez de despejar tudo de uma vez. Para decisões finais de alto risco (escolha final de universidade, vistos), incentive apoio humano complementar.`
 
-## Revisão de textos e redações
-Quando o aluno colar um texto (carta de motivação, personal statement, redação) pedindo revisão, siga esta estrutura de feedback:
-1. Comece com um resumo curto do que o texto está tentando comunicar, pra confirmar que você entendeu a intenção.
-2. Liste de 2 a 3 pontos fortes específicos do texto (não genéricos como "está bom", cite trechos ou ideias reais).
-3. Liste de 2 a 3 pontos que podem melhorar, sendo honesto mesmo se o texto tiver problemas sérios (clichês, falta de exemplos concretos, tom genérico demais) — explique o porquê de cada ponto.
-4. Sugira, se fizer sentido, uma reescrita de UMA frase ou trecho específico como exemplo prático, sem reescrever o texto inteiro por ele.
-5. Termine perguntando se ele quer que você aprofunde algum dos pontos levantados.
-Nunca elogie um texto fraco só para ser gentil — isso prejudica o aluno na aplicação real.
+// Converte o perfil_academico (pt-BR, salvo no user_metadata) para o formato
+// que o matching lê — mesma conversão feita em app/oportunidades/page.js.
+function adaptarPerfil(meta) {
+  if (!meta) return null
+  return {
+    school_year: converterAnoEscolar(meta.anoEscolar),
+    area: meta.areaInteresse ?? null,
+    budget: meta.orcamento ?? null,
+    country_preference: meta.paisPreferencia ?? null,
+    goals: meta.objetivo ?? null,
+  }
+}
 
-## Estilo de fala
-Fale de forma natural e direta, como uma pessoa real conversando, não como um script decorado. Evite frases de efeito vazias, saudações floreadas repetidas ("Que ótima pergunta!", "Fico feliz em ajudar!") e emojis em excesso. Prefira frases curtas e claras a parágrafos rebuscados. Quando discordar de algo que o aluno disser ou perceber um ponto fraco no plano dele, diga isso com gentileza mas sem rodeios — não concorde só para agradar. Trate o aluno como alguém capaz, sem infantilizar, mas também sem jargão desnecessário. Se não tiver certeza sobre algo, admita a incerteza em vez de inventar uma resposta confiante. Seja honesto mesmo quando a verdade for menos animadora do que o aluno gostaria de ouvir — por exemplo, se o perfil dele hoje não é competitivo o bastante para uma bolsa específica, diga isso claramente, sempre acompanhado do que pode ser feito para melhorar.
+function converterAnoEscolar(ano) {
+  const mapa = {
+    '8º ano do ensino fundamental': '8th',
+    '9º ano do ensino fundamental': '9th',
+    '1º ano do ensino médio': '9th',
+    '2º ano do ensino médio': '10th',
+    '3º ano do ensino médio': '11th',
+    'já concluí o ensino médio': '12th',
+  }
+  return mapa[ano] || null
+}
 
-## Tom e fechamento
-Seja encorajador e acolhedor, mas honesto — nunca infle expectativas. Muitos alunos que usam o Admitly estão ansiosos com o processo de aplicação; seu papel é reduzir essa ansiedade com clareza e orientação prática, não com promessas vazias. Evite jargão técnico sem explicar. Sempre termine suas respostas sugerindo o próximo passo concreto que o aluno pode tomar, para manter a sensação de progresso.
+// Ordem de prioridade para o contexto do chat: prazo ainda aberto (mais próximo
+// primeiro), depois as sem data, e as encerradas por último. Empates preservam
+// a ordem por compatibilidade que o matching já calculou.
+function priorizarPorPrazo(lista) {
+  const peso = (opp) => {
+    const { tipo } = prazoStatus(opp)
+    if (tipo === 'urgente' || tipo === 'agendada' || tipo === 'aberta') return 0
+    if (tipo === 'sem-data') return 1
+    return 2
+  }
 
-## Formato das respostas
-Prefira respostas objetivas e bem divididas, evitando textos muito longos de uma vez. Ofereça aprofundar um tópico específico em vez de despejar todas as informações de uma só vez — isso deixa a conversa mais leve para o aluno acompanhar.
+  return [...lista].sort((a, b) => {
+    const pa = peso(a)
+    const pb = peso(b)
+    if (pa !== pb) return pa - pb
 
-## Limites
-Você não substitui um mentor humano ou consultor de intercâmbio para decisões finais de alto risco (como escolha final de universidade ou vistos) — nesses casos, incentive o aluno a buscar apoio humano complementar, mas continue ajudando com o que estiver ao seu alcance.`
+    const da = diasAte(a.application_deadline)
+    const db = diasAte(b.application_deadline)
+    const semPrazo = Number.POSITIVE_INFINITY
+    const va = da == null || da < 0 ? semPrazo : da
+    const vb = db == null || db < 0 ? semPrazo : db
+    return va - vb
+  })
+}
 
-function montarContexto(perfil, aplicacoes, tarefas) {
+function montarContexto(perfil, aplicacoes, tarefas, matches) {
   let contexto = ''
 
   if (perfil && Object.values(perfil).some((v) => v)) {
@@ -112,7 +133,35 @@ function montarContexto(perfil, aplicacoes, tarefas) {
     }
   }
 
+  if (matches && matches.length > 0) {
+    contexto += '\n## Oportunidades mais compatíveis com o perfil (use para recomendações)\n'
+    matches.forEach((m) => {
+      const custo =
+        m.program_cost != null && m.program_cost !== ''
+          ? `, custo ${m.program_cost} ${m.currency}`
+          : ''
+      contexto += `- ${m.name} (${m.type || 'programa'} · ${m.country || 'global'}) — compatibilidade ${m.compatibility?.level}, ${m.deadline?.text || 'sem prazo definido'}${custo}\n`
+      const motivos = (m.compatibility?.reasons || []).slice(0, 2).join('; ')
+      if (motivos) contexto += `  Por quê: ${motivos}\n`
+    })
+  }
+
   return contexto
+}
+
+function montarHistorico(historico, limite = 30) {
+  if (!Array.isArray(historico)) return []
+  const valido = historico
+    .filter((m) => m && typeof m.texto === 'string' && m.texto.trim() !== '' && (m.remetente === 'usuario' || m.remetente === 'admitly'))
+    .map((m) => ({
+      role: m.remetente === 'usuario' ? 'user' : 'model',
+      parts: [{ text: m.texto }],
+    }))
+  // O Gemini exige que o histórico comece com "user"; a API descarta o resto com erro.
+  while (valido.length > 0 && valido[0].role !== 'user') {
+    valido.shift()
+  }
+  return valido.slice(-limite)
 }
 
 export async function POST(request) {
@@ -137,18 +186,22 @@ export async function POST(request) {
     return Response.json({ erro: 'não autenticado' }, { status: 401 })
   }
 
-  const { data: assinatura } = await supabase
-    .from('subscriptions')
-    .select('status')
-    .eq('user_id', user.id)
-    .eq('status', 'active')
-    .maybeSingle()
+  const ativa = await temAssinaturaAtiva(supabase, user.id)
 
-  if (!assinatura) {
+  if (!ativa) {
     return Response.json({ erro: 'assinatura inativa' }, { status: 403 })
   }
 
-  const { mensagem, historico } = await request.json()
+  let corpo
+  try {
+    corpo = await request.json()
+  } catch {
+    return Response.json({ erro: 'corpo inválido' }, { status: 400 })
+  }
+  const mensagem = typeof corpo?.mensagem === 'string' ? corpo.mensagem.trim() : ''
+  if (!mensagem || mensagem.length > 8000) {
+    return Response.json({ erro: 'mensagem vazia ou longa demais' }, { status: 400 })
+  }
 
   const { data: aplicacoes } = await supabase
     .from('applications')
@@ -160,7 +213,23 @@ export async function POST(request) {
     .select('title, done')
     .eq('user_id', user.id)
 
-  const promptComContexto = PROMPT_SISTEMA + montarContexto(user.user_metadata?.perfil_academico, aplicacoes, tarefas)
+  const { data: oportunidades } = await supabase
+    .from('opportunities')
+    .select('*')
+
+  const perfilAcademico = user.user_metadata?.perfil_academico ?? null
+  // O mentor só vê cinco oportunidades: elas precisam ser as que dá para aplicar
+  // AGORA. Ordem: prazo mais próximo primeiro, depois as sem data, e as encerradas
+  // por último — antes, a ordem por dificuldade escondia justamente os prazos curtos.
+  const matches = priorizarPorPrazo(
+    calcularMatches(oportunidades || [], adaptarPerfil(perfilAcademico))
+  ).slice(0, 6)
+
+  const promptComContexto = PROMPT_SISTEMA + montarContexto(perfilAcademico, aplicacoes, tarefas, matches)
+
+  if (!process.env.GEMINI_API_KEY) {
+    return Response.json({ erro: 'mentor temporariamente indisponível' }, { status: 503 })
+  }
 
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
   const model = genAI.getGenerativeModel({
@@ -168,24 +237,32 @@ export async function POST(request) {
     systemInstruction: promptComContexto,
   })
 
-  const chat = model.startChat({
-    history: (historico || []).map((m) => ({
-      role: m.remetente === 'usuario' ? 'user' : 'model',
-      parts: [{ text: m.texto }],
-    })),
-  })
+  const chat = model.startChat({ history: montarHistorico(corpo.historico) })
 
-  const result = await chat.sendMessageStream(mensagem)
+  let result
+  try {
+    result = await chat.sendMessageStream(mensagem)
+  } catch (err) {
+    console.error('gemini sendMessageStream falhou:', err?.message || err)
+    return Response.json({ erro: 'mentor não conseguiu responder agora, tente de novo' }, { status: 502 })
+  }
 
   const stream = new ReadableStream({
     async start(controller) {
-      for await (const chunk of result.stream) {
-        const texto = chunk.text()
-        controller.enqueue(new TextEncoder().encode(texto))
+      try {
+        for await (const chunk of result.stream) {
+          const texto = chunk.text()
+          if (texto) controller.enqueue(new TextEncoder().encode(texto))
+        }
+      } catch (err) {
+        console.error('stream do gemini interrompido:', err?.message || err)
+      } finally {
+        controller.close()
       }
-      controller.close()
     },
   })
 
-  return new Response(stream)
+  return new Response(stream, {
+    headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' },
+  })
 }

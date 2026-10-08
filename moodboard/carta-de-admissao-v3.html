@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admitly · Moodboard v3 — A carta inteira</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --papel:        #F6F2EA;
+    --papel-elev:   #FCFAF5;
+    --tinta:        #191512;
+    --tinta-sec:    #5C554B;
+    --hairline:     #E2DACB;
+    --lacre:        #1A4D3A;
+    --vermelho:     #A6301F;
+    /* acento: AZUL-TINTA escolhido em 03 out (alternativas A·C·D continuam trocáveis ao vivo) */
+    --acento:       #1F3A5F;
+    --acento-suave: rgba(31,58,95,.14);
+    --serif: "Instrument Serif", Georgia, serif;
+    --corpo: "Libre Caslon Text", Georgia, serif;
+    --sans:  "Instrument Sans", "Helvetica Neue", sans-serif;
+    --mono:  "IBM Plex Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-font-smoothing: antialiased; }
+
+  body {
+    background: var(--papel);
+    color: var(--tinta);
+    font-family: var(--corpo);   /* o documento inteiro lê como carta */
+    font-size: 15.5px;
+    line-height: 1.6;
+  }
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    opacity: .05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .folha { max-width: 1080px; margin: 0 auto; padding: 48px 32px 96px; }
+
+  .caps {
+    font-family: var(--sans);
+    text-transform: uppercase;
+    letter-spacing: .16em;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .caps--sec { color: var(--tinta-sec); }
+  .mono { font-family: var(--mono); }
+  .secao { margin-top: 64px; }
+  .secao > header {
+    display: flex; align-items: baseline; gap: 14px;
+    border-top: 1px solid var(--tinta);
+    padding-top: 14px; margin-bottom: 28px;
+  }
+  .secao > header .num  { font-family: var(--mono); font-size: 12px; color: var(--acento); }
+  .secao > header h2    { font-size: 13px; }
+  .secao > header .nota { margin-left: auto; font-family: var(--mono); font-size: 11.5px; color: var(--tinta-sec); text-align: right; }
+
+  /* ================= LOGO ================= */
+  .logo-famila { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 0; border: 1px solid var(--hairline); border-radius: 8px; overflow: hidden; background: var(--papel-elev); }
+  .logo-celula { padding: 40px 32px; display: flex; flex-direction: column; gap: 18px; justify-content: space-between; min-height: 240px; }
+  .logo-celula + .logo-celula { border-left: 1px solid var(--hairline); }
+  .logo-celula .rotulo { margin-top: auto; }
+
+  .logo {
+    display: inline-flex; align-items: baseline;
+    align-self: flex-start; /* dentro de flex-column, não estica: o traço segue o wordmark */
+    font: 400 56px/1 var(--serif);
+    letter-spacing: -.01em;
+    color: var(--tinta);
+    position: relative;
+    padding-bottom: 10px;
+  }
+  .logo em { font-style: italic; }
+  .logo .ponto { width: 7px; height: 7px; border-radius: 50%; background: var(--acento); margin-left: 7px; }
+  .logo .traco-logo { position: absolute; left: 2px; bottom: 0; width: 88%; height: 7px; }
+  .logo--mono { color: var(--tinta); }
+  .logo--mono .ponto { background: var(--tinta); }
+
+  .logo-compacta {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 84px; height: 84px;
+    background: var(--tinta); border-radius: 12px;
+    font: 400 44px/1 var(--serif);
+    color: var(--papel);
+  }
+  .logo-compacta .ponto { color: var(--acento); }
+  .logo-mini { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: var(--papel); border: 1px solid var(--hairline); border-radius: 9px; font: 400 21px/1 var(--serif); color: var(--tinta); }
+  .logo-mini .ponto { color: var(--acento); }
+  .linha-logos { display: flex; gap: 14px; align-items: center; }
+  .uso-logo { font-size: 13.5px; color: var(--tinta-sec); }
+  .uso-logo strong { color: var(--tinta); font-weight: 400; }
+
+  /* ================= ACENTO ================= */
+  .paleta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 22px; }
+  .cor .bloco { height: 92px; border-radius: 4px; border: 1px solid var(--hairline); margin-bottom: 10px; }
+  .cor .hex { font-family: var(--mono); font-size: 12px; color: var(--tinta-sec); }
+  .cor .uso { font-size: 13.5px; color: var(--tinta-sec); margin-top: 2px; }
+
+  .candidatas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 22px; margin-top: 30px; }
+  .candidata { border: 1px solid var(--hairline); border-radius: 6px; background: var(--papel-elev); padding: 20px 18px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .candidata .bloco { height: 60px; border-radius: 4px; border: 1px solid var(--hairline); }
+  .candidata .nome { font: 400 20px/1.1 var(--serif); }
+  .candidata .hex { font-family: var(--mono); font-size: 11.5px; color: var(--tinta-sec); }
+  .candidata .uso { font-size: 13px; line-height: 1.55; color: var(--tinta-sec); flex: 1; }
+  .candidata .mini { display: flex; align-items: center; gap: 10px; padding-top: 12px; border-top: 1px solid var(--hairline); font: 400 16px/1.2 var(--serif); }
+  .candidata .mini .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .btn-aplicar {
+    align-self: flex-start;
+    font: 600 11px var(--sans); letter-spacing: .1em; text-transform: uppercase;
+    padding: 7px 13px; border-radius: 3px; border: 1px solid var(--hairline);
+    background: transparent; color: var(--tinta); cursor: pointer;
+    transition: border-color .15s ease, background-color .15s ease, color .15s ease;
+  }
+  .btn-aplicar:hover { border-color: var(--tinta); }
+  .btn-aplicar.ativo { background: var(--tinta); color: var(--papel); border-color: var(--tinta); }
+
+  .troca-acento {
+    position: fixed; right: 18px; bottom: 18px; z-index: 50;
+    display: flex; align-items: center; gap: 6px;
+    background: var(--papel-elev); border: 1px solid var(--hairline); border-radius: 4px;
+    padding: 8px 10px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; color: var(--tinta-sec);
+    box-shadow: 0 1px 0 var(--hairline);
+  }
+  .troca-acento button {
+    width: 26px; height: 26px; border-radius: 3px; border: 1px solid var(--hairline);
+    background: transparent; font: 500 11px var(--mono); color: var(--tinta); cursor: pointer;
+  }
+  .troca-acento button.ativo { background: var(--tinta); color: var(--papel); border-color: var(--tinta); }
+
+  /* ================= TIPOGRAFIA ================= */
+  .tipo .amostra-display { font: 400 48px/1.08 var(--serif); letter-spacing: -.005em; max-width: 20ch; }
+  .tipo .amostra-display em { font-style: italic; }
+  .tipo .amostra-h2 { font: 400 28px/1.2 var(--serif); margin-top: 24px; }
+  .tipo .amostra-corpo { max-width: 62ch; margin-top: 22px; font: 400 17.5px/1.7 var(--corpo); }
+  .tipo .amostra-mono { font-family: var(--mono); font-size: 13px; color: var(--tinta-sec); margin-top: 22px; padding-top: 12px; border-top: 1px solid var(--hairline); }
+  .tipo .escala { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 26px; }
+  .tipo .escala figure { border: 1px solid var(--hairline); border-radius: 4px; padding: 14px 18px; background: var(--papel-elev); }
+  .tipo .escala figcaption { margin-top: 8px; }
+  .comparacao { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 30px; }
+  .comparacao figure { border: 1px solid var(--hairline); border-radius: 6px; background: var(--papel-elev); padding: 22px 24px 16px; }
+  .comparacao figure.escolhida { border-top: 2px solid var(--acento); }
+  .comparacao .frase { font-size: 17.5px; line-height: 1.7; }
+  .comparacao figcaption { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--hairline); }
+  .comparacao .veredito { font-size: 13px; color: var(--tinta-sec); }
+
+  /* ================= O GESTO (traço de tinteiro) ================= */
+  .grifo { position: relative; white-space: nowrap; }
+  .grifo svg { position: absolute; left: -2%; bottom: -5px; width: 104%; height: 8px; overflow: visible; stroke: var(--acento); }
+  .traco-logo         { stroke: var(--acento); }
+  .grifo--lacre svg   { stroke: var(--lacre); }
+  .grifo--vermelho svg{ stroke: var(--vermelho); }
+
+  .usos-gesto { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--hairline); border-radius: 8px; overflow: hidden; background: var(--papel-elev); }
+  .uso-gesto { padding: 32px 36px; }
+  .uso-gesto + .uso-gesto { border-left: 1px solid var(--hairline); }
+  .uso-gesto .exemplo { font: 400 30px/1.25 var(--serif); }
+  .uso-gesto .regra   { margin-top: 16px; font-size: 13.5px; color: var(--tinta-sec); max-width: 40ch; }
+  .fileira-gesto { border: 1px solid var(--hairline); border-top: 0; border-radius: 0 0 8px 8px; background: var(--papel-elev); padding: 26px 36px; }
+  .fileira-gesto .linha { display: flex; align-items: baseline; gap: 10px; font: 400 22px/1.4 var(--serif); }
+  .fileira-gesto .legenda { font: 400 13px/1.5 var(--corpo); color: var(--tinta-sec); margin-top: 10px; }
+
+  /* ================= A CARTA NO PRODUTO ================= */
+  .grade-carta { display: grid; grid-template-columns: 1.35fr 1fr; gap: 22px; align-items: start; }
+  .coluna-carta { display: flex; flex-direction: column; gap: 22px; }
+
+  .carta-email { border: 1px solid var(--hairline); border-radius: 6px; overflow: hidden; background: var(--papel-elev); }
+  .carta-email .cabecalho-email {
+    padding: 14px 20px; background: var(--papel); border-bottom: 1px solid var(--hairline);
+    font: 500 11px var(--mono); letter-spacing: .07em; color: var(--tinta-sec);
+    display: flex; gap: 18px; flex-wrap: wrap;
+  }
+  .carta-email .cabecalho-email strong { color: var(--tinta); font-weight: 500; }
+  .carta-interna { padding: 44px 48px 32px; }
+
+  .letterhead { display: flex; align-items: center; gap: 20px; }
+  .escudo { width: 42px; height: 52px; flex: none; color: var(--acento); }
+  .letterhead .nome { font: 400 26px/1.1 var(--corpo); letter-spacing: .13em; text-transform: uppercase; color: var(--acento); }
+  .letterhead .setor { font: 400 16px/1.3 var(--corpo); color: var(--tinta); margin-top: 4px; }
+  .letterhead .setor em { font-style: italic; }
+  .regra-dupla { margin-top: 14px; height: 4px; border-top: 2px solid var(--acento); border-bottom: 1px solid var(--acento); }
+
+  .carta-corpo { margin-top: 30px; font: 400 17px/1.75 var(--corpo); max-width: 58ch; }
+  .carta-corpo p + p { margin-top: 14px; }
+  .assinatura { margin-top: 34px; display: inline-flex; flex-direction: column; }
+  .assinatura .nome-assinado { font: italic 400 31px/1 var(--serif); position: relative; padding-bottom: 12px; align-self: flex-start; }
+  .assinatura svg { position: absolute; left: 2%; bottom: 0; width: 96%; height: 8px; stroke: var(--acento); }
+  .assinatura .cargo { margin-top: 8px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; color: var(--tinta-sec); }
+  .carta-meta { margin-top: 26px; padding-top: 14px; border-top: 1px solid var(--hairline); font: 400 11px var(--mono); letter-spacing: .08em; color: var(--tinta-sec); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+  .cartao-opp { background: var(--papel-elev); border: 1px solid var(--hairline); border-radius: 6px; padding: 24px 28px 20px; }
+  .cartao-opp .topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; font: 500 10.5px var(--mono); letter-spacing: .08em; color: var(--tinta-sec); padding-bottom: 14px; border-bottom: 1px solid var(--hairline); }
+  .cartao-opp .topo .tag-status { display: flex; align-items: center; gap: 8px; flex: none; white-space: nowrap; }
+  .cartao-opp h4 { margin-top: 18px; font: 400 27px/1.15 var(--serif); }
+  .cartao-opp .linha-dados { margin-top: 10px; font: 400 15.5px/1.65 var(--corpo); color: var(--tinta); max-width: 42ch; }
+  .cartao-opp .base { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--hairline); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .prazo-mono { font: 500 11.5px var(--mono); letter-spacing: .07em; color: var(--tinta-sec); }
+  .cartao-opp .btn--secundario { padding: 9px 16px; font-size: 13px; }
+
+  .resposta-chat { border-left: 2px solid var(--hairline); padding: 4px 0 4px 20px; }
+  .resposta-chat .de { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; color: var(--tinta-sec); }
+  .resposta-chat p.corpo { margin-top: 10px; font: 400 16.5px/1.7 var(--corpo); max-width: 44ch; }
+  .resposta-chat .fim { margin-top: 12px; font: italic 400 20px/1 var(--serif); color: var(--tinta-sec); }
+
+  .regra-carta { margin-top: 24px; font-size: 13.5px; color: var(--tinta-sec); max-width: 70ch; }
+  .regra-carta strong { color: var(--tinta); font-weight: 400; }
+
+  /* ================= COMPONENTES ================= */
+  .grade-comp { display: grid; grid-template-columns: 1fr 1fr; gap: 40px 48px; }
+  .comp h3 { margin-bottom: 16px; }
+  .linha-comp { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .comp .obs { font-size: 13.5px; color: var(--tinta-sec); margin-top: 14px; max-width: 44ch; }
+
+  .btn {
+    font: 600 15px/1 var(--sans);
+    border-radius: 3px;
+    padding: 13px 24px;
+    cursor: pointer;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+    letter-spacing: .01em;
+  }
+  .btn--primario { background: var(--acento); color: var(--papel); border: 1px solid var(--acento); }
+  .btn--primario:hover { background: color-mix(in srgb, var(--acento) 82%, #000); border-color: color-mix(in srgb, var(--acento) 82%, #000); }
+  .btn--primario:disabled { background: #DAD2C2; border-color: #DAD2C2; color: #8F8678; cursor: not-allowed; }
+  .btn--secundario { background: transparent; color: var(--tinta); border: 1px solid var(--hairline); }
+  .btn--secundario:hover { border-color: var(--acento); }
+  .btn--link {
+    background: none; border: 0; cursor: pointer;
+    font: 600 15px/1 var(--sans); color: var(--acento);
+    text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1.5px;
+    padding: 4px 2px;
+  }
+  .btn--link:hover { color: color-mix(in srgb, var(--acento) 82%, #000); }
+
+  .status { display: flex; flex-direction: column; gap: 12px; }
+  .status .item { display: flex; align-items: center; gap: 12px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .dot--lacre    { background: var(--lacre);    box-shadow: 0 0 0 3px rgba(26,77,58,.14); }
+  .dot--vazado   { background: transparent; border: 1.5px solid var(--tinta-sec); }
+  .dot--acento   { background: var(--acento);   box-shadow: 0 0 0 3px var(--acento-suave); }
+  .dot--vermelho { background: var(--vermelho); box-shadow: 0 0 0 3px rgba(166,48,31,.14); }
+  .dot--tinta    { background: var(--tinta-sec); opacity: .45; }
+  .status .quando { font-family: var(--mono); font-size: 12px; color: var(--tinta-sec); margin-left: auto; }
+
+  .campo { display: flex; flex-direction: column; gap: 6px; }
+  .campo input {
+    border: 0; border-bottom: 1px solid var(--hairline);
+    background: transparent; border-radius: 0;
+    padding: 9px 2px; font: 400 16px var(--corpo); color: var(--tinta);
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .campo input::placeholder { color: #B4AB9C; }
+  .campo input:focus { outline: none; border-bottom-color: var(--lacre); box-shadow: 0 1px 0 0 var(--lacre); }
+  .campos-demo { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 460px; }
+
+  /* ================= voz ================= */
+  .vozes { display: grid; gap: 0; border: 1px solid var(--hairline); border-radius: 8px; overflow: hidden; background: var(--papel-elev); }
+  .voz { padding: 30px 36px; display: flex; align-items: baseline; gap: 24px; }
+  .voz + .voz { border-top: 1px solid var(--hairline); }
+  .voz .num { font-family: var(--mono); font-size: 12px; color: var(--tinta-sec); flex: none; }
+  .voz .frase { font: 400 27px/1.25 var(--serif); }
+
+  /* ================= login 1:1 ================= */
+  .tela-login {
+    border: 1px solid var(--hairline); border-radius: 8px;
+    overflow: hidden; background: var(--papel-elev);
+    display: grid; grid-template-columns: 1.5fr 1fr;
+    min-height: 720px;
+  }
+  .tela-login .marca {
+    padding: 56px; display: flex; flex-direction: column; gap: 40px;
+    border-right: 1px solid var(--hairline);
+  }
+  .tela-login .marca .letterhead-login { align-self: flex-start; display: flex; align-items: flex-start; gap: 16px; }
+  .tela-login .marca .letterhead-login .escudo { width: 34px; height: 42px; margin-top: 1px; }
+  .tela-login .marca .letterhead-login .regra-dupla { width: 208px; }
+  .tela-login .marca .logo { font-size: 26px; padding-bottom: 6px; }
+  .tela-login .marca .logo .ponto { width: 4px; height: 4px; margin-left: 5px; }
+  .tela-login .marca .meio { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .tela-login h2 {
+    font: 400 clamp(36px, 3.8vw, 50px)/1.12 var(--serif);
+    letter-spacing: -.005em; max-width: 13ch;
+  }
+  .tela-login .sub { margin-top: 20px; color: var(--tinta-sec); max-width: 40ch; font: 400 17px/1.7 var(--corpo); }
+  .tela-login .envelope { margin-top: 48px; font-family: var(--mono); font-size: 11.5px; color: var(--tinta-sec); letter-spacing: .08em; }
+  .tela-login .base { color: var(--tinta-sec); }
+
+  .tela-login .form { padding: 56px 48px; display: flex; flex-direction: column; gap: 26px; background: var(--papel); }
+  .tela-login .form h3 { font: 400 26px/1.2 var(--serif); }
+  .tela-login .form .btn--primario { width: 100%; }
+  .tela-login .form .links { display: flex; justify-content: space-between; align-items: center; }
+  .tela-login .form .nota-mono { font-family: var(--mono); font-size: 11.5px; color: var(--tinta-sec); margin-top: auto; padding-top: 18px; border-top: 1px solid var(--hairline); }
+
+  .rodape-mood { margin-top: 72px; border-top: 1px solid var(--tinta); padding-top: 18px; display: flex; gap: 20px; flex-wrap: wrap; align-items: baseline; }
+  .rodape-mood .prox { margin-left: auto; color: var(--tinta-sec); }
+
+  @media (max-width: 880px) {
+    .paleta, .candidatas { grid-template-columns: repeat(2, 1fr); }
+    .grade-comp, .comparacao, .grade-carta { grid-template-columns: 1fr; }
+    .logo-famila { grid-template-columns: 1fr; }
+    .logo-celula + .logo-celula { border-left: 0; border-top: 1px solid var(--hairline); }
+    .usos-gesto { grid-template-columns: 1fr; }
+    .uso-gesto + .uso-gesto { border-left: 0; border-top: 1px solid var(--hairline); }
+    .tela-login { grid-template-columns: 1fr; }
+    .tela-login .marca { border-right: 0; border-bottom: 1px solid var(--hairline); }
+    .carta-interna { padding: 32px 28px 26px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- filtro de tinta imperfeita, usado nos traços de caneta -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="tinta">
+    <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" result="ruido"/>
+    <feDisplacementMap in="SourceGraphic" in2="ruido" scale="1.4"/>
+  </filter>
+</svg>
+
+<!-- traço de tinteiro reutilizável -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="traco-tinteiro" viewBox="0 0 100 8" preserveAspectRatio="none">
+    <path d="M2 5.2 C 22 3.2, 46 6.4, 68 4.2 S 92 2.8, 98 3.6" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M8 6 C 30 4.8, 58 7, 92 5" stroke-width="1" fill="none" stroke-linecap="round" opacity=".55"/>
+  </symbol>
+</svg>
+
+<main class="folha">
+
+  <!-- ======== masthead ======== -->
+  <header>
+    <div class="linha" style="display:flex; gap:18px; flex-wrap:wrap; margin-bottom:26px">
+      <span class="caps caps--sec">Moodboard · v3 · 03 out 2026</span>
+      <span class="caps caps--sec" style="color:var(--acento)">corpo em Caslon + letterhead + acento trocável A·B·C·D</span>
+    </div>
+    <div class="logo" style="font-size:76px">
+      Admit<em>ly</em><span class="ponto"></span>
+      <svg class="traco-logo" viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)"><use href="#traco-tinteiro"/></svg>
+    </div>
+    <p style="max-width:60ch; margin-top:20px; font-size:17px; line-height:1.7">
+      O refinamento desta versão vem do exemplo que você mandou: cartas de universidade de verdade.
+      O corpo de texto agora é uma serif old-style — a <strong style="font-weight:400">Libre Caslon Text</strong> —, o
+      letterhead copia a anatomia da carta (nome espaçado, linha de setor, régua dupla) e o dourado sai de cena:
+      quatro candidatos de acento, trocáveis ao vivo no controle
+      <span class="mono" style="font-size:13px">A·B·C·D</span> do canto da tela.
+    </p>
+  </header>
+
+  <!-- ======== 01 · marca ======== -->
+  <section class="secao">
+    <header>
+      <span class="num">01</span><h2 class="caps">Marca</h2>
+      <span class="nota">aprovada no v2 — intacta; o ponto final segue o acento</span>
+    </header>
+
+    <div class="logo-famila">
+      <div class="logo-celula">
+        <div class="logo">Admit<em>ly</em><span class="ponto"></span><svg class="traco-logo" viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)"><use href="#traco-tinteiro"/></svg></div>
+        <div>
+          <div class="caps">Primária</div>
+          <p class="uso-logo" style="margin-top:6px">Instrument Serif. O "ly" em itálico dá o movimento;
+          o ponto final fecha a frase — a carta termina em admissão. O traço é desenhado,
+          nunca fonte.</p>
+        </div>
+      </div>
+      <div class="logo-celula">
+        <div class="linha-logos">
+          <span class="logo-compacta">A<span class="ponto">.</span></span>
+          <span class="logo-mini">A<span class="ponto">.</span></span>
+        </div>
+        <div>
+          <div class="caps">Compacta</div>
+          <p class="uso-logo" style="margin-top:6px">"A." para favicon, avatar, app icon e
+          lugares apertados. Fundo tinta no produto, papel em docs.</p>
+        </div>
+      </div>
+      <div class="logo-celula">
+        <div class="logo logo--mono">Admit<em>ly</em><span class="ponto"></span></div>
+        <div>
+          <div class="caps">Monocromática</div>
+          <p class="uso-logo" style="margin-top:6px">Sem traço e sem acento quando o contexto
+          é impresso, PDF ou parceria. A identidade nunca depende de cor para funcionar.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== 02 · acento ======== -->
+  <section class="secao">
+    <header>
+      <span class="num">02</span><h2 class="caps">Acento</h2>
+      <span class="nota">o dourado saiu — 4 candidatas, troque ao vivo</span>
+    </header>
+
+    <div class="paleta">
+      <div class="cor"><div class="bloco" style="background:#F6F2EA"></div><div class="caps caps--sec">Papel</div><div class="hex">#F6F2EA</div><div class="uso">fundo de tudo</div></div>
+      <div class="cor"><div class="bloco" style="background:#FCFAF5"></div><div class="caps caps--sec">Papel elevado</div><div class="hex">#FCFAF5</div><div class="uso">superfícies sobre papel</div></div>
+      <div class="cor"><div class="bloco" style="background:#191512"></div><div class="caps caps--sec">Tinta</div><div class="hex">#191512</div><div class="uso">texto + botão primário</div></div>
+      <div class="cor"><div class="bloco" style="background:#5C554B"></div><div class="caps caps--sec">Tinta secundária</div><div class="hex">#5C554B</div><div class="uso">texto de apoio</div></div>
+      <div class="cor"><div class="bloco" style="background:#E2DACB"></div><div class="caps caps--sec">Hairline</div><div class="hex">#E2DACB</div><div class="uso">toda divisória do produto</div></div>
+      <div class="cor"><div class="bloco" style="background:#1A4D3A"></div><div class="caps caps--sec">Lacre</div><div class="hex">#1A4D3A</div><div class="uso">marca, links, foco</div></div>
+      <div class="cor"><div class="bloco" style="background:#A6301F"></div><div class="caps caps--sec">Vermelho-lacre</div><div class="hex">#A6301F</div><div class="uso">erro / prazo urgente</div></div>
+      <div class="cor"><div class="bloco" style="background:var(--acento)"></div><div class="caps caps--sec" style="color:var(--acento)">Acento — vivo</div><div class="hex" id="hex-acento">#1F3A5F</div><div class="uso">grifo · ponto do logo · compat. alta · plano pago</div></div>
+    </div>
+
+    <div class="candidatas">
+      <div class="candidata">
+        <div class="bloco" style="background:#7A1F2B"></div>
+        <div class="nome">A · Crimson</div>
+        <div class="hex">#7A1F2B</div>
+        <p class="uso">A cor da carta que você anexou. Associação imediata com "carta de universidade".
+        Cuidado: convive com o vermelho de urgência — famílias distintas (vinho × tijolo), mas pede disciplina.</p>
+        <div class="mini"><span class="dot" style="background:#7A1F2B; box-shadow:0 0 0 3px rgba(122,31,43,.14)"></span><span>US$ 1.700<span style="display:block; height:4px"></span><svg viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)" style="position:static; width:100%; height:7px; stroke:#7A1F2B; overflow:visible"><use href="#traco-tinteiro"/></svg></span></div>
+        <button class="btn-aplicar" data-acento="crimson">Aplicar</button>
+      </div>
+      <div class="candidata">
+        <div class="bloco" style="background:#1F3A5F"></div>
+        <div class="nome">B · Azul-tinta</div>
+        <div class="hex">#1F3A5F · ESCOLHIDA 03 OUT</div>
+        <p class="uso">Tinta azul-preta de caneta-tinteiro — literal para a marca do traço. Não briga
+        com o lacre nem com o vermelho de urgência. A mais segura para o produto inteiro.</p>
+        <div class="mini"><span class="dot" style="background:#1F3A5F; box-shadow:0 0 0 3px rgba(31,58,95,.14)"></span><span>US$ 1.700<span style="display:block; height:4px"></span><svg viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)" style="position:static; width:100%; height:7px; stroke:#1F3A5F; overflow:visible"><use href="#traco-tinteiro"/></svg></span></div>
+        <button class="btn-aplicar" data-acento="azul">Aplicar</button>
+      </div>
+      <div class="candidata">
+        <div class="bloco" style="background:#8C6A2F"></div>
+        <div class="nome">C · Bronze</div>
+        <div class="hex">#8C6A2F</div>
+        <p class="uso">O mesmo calor do dourado, escurecido para sair do amarelo. Continuidade máxima
+        com o que já foi aprovado no v1 e no v2.</p>
+        <div class="mini"><span class="dot" style="background:#8C6A2F; box-shadow:0 0 0 3px rgba(140,106,47,.16)"></span><span>US$ 1.700<span style="display:block; height:4px"></span><svg viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)" style="position:static; width:100%; height:7px; stroke:#8C6A2F; overflow:visible"><use href="#traco-tinteiro"/></svg></span></div>
+        <button class="btn-aplicar" data-acento="bronze">Aplicar</button>
+      </div>
+      <div class="candidata">
+        <div class="bloco" style="background:#191512"></div>
+        <div class="nome">D · Tinta pura</div>
+        <div class="hex">#191512</div>
+        <p class="uso">Sem acento colorido: o grifo é a própria tinta e o acento vira tipografia
+        (itálica + traço). O mais editorial de todos. Lacre segue nos links.</p>
+        <div class="mini"><span class="dot" style="background:#191512; box-shadow:0 0 0 3px rgba(25,21,18,.12)"></span><span>US$ 1.700<span style="display:block; height:4px"></span><svg viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)" style="position:static; width:100%; height:7px; stroke:#191512; overflow:visible"><use href="#traco-tinteiro"/></svg></span></div>
+        <button class="btn-aplicar" data-acento="tinta">Aplicar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== 03 · tipografia ======== -->
+  <section class="secao tipo">
+    <header>
+      <span class="num">03</span><h2 class="caps">Tipografia</h2>
+      <span class="nota">Instrument Serif no display (mantida) · Libre Caslon Text no corpo — o rosto da carta</span>
+    </header>
+
+    <p class="amostra-display">Sua carta de <em>admissão</em> está a caminho.</p>
+    <p class="amostra-h2">Inscrições abertas até 14 de outubro</p>
+    <p class="amostra-corpo">
+      O corpo muda de casa: entra a Libre Caslon Text, família old-style do corpo de cartas
+      universitárias — a mesma linhagem do exemplo que você anexou (Caslon/Garamond). O display
+      continua Instrument Serif: é a voz dos títulos; a Caslon é a voz da leitura. E a Instrument
+      Sans segue só onde existe interface: rótulos, botões, estados.
+    </p>
+    <p class="amostra-mono">PRAZO 14 OUT 2026&nbsp;&nbsp;·&nbsp;&nbsp;CUSTO US$ 1.700&nbsp;&nbsp;·&nbsp;&nbsp;COMPATIBILIDADE ALTA&nbsp;&nbsp;·&nbsp;&nbsp;9º ANO → 12º</p>
+
+    <div class="comparacao">
+      <figure class="escolhida">
+        <p class="frase" style="font-family:'Libre Caslon Text', Georgia, serif">Inscrições até 14 de outubro — custo US$ 1.700, com bolsa de até 100%.</p>
+        <figcaption class="caps caps--sec">Libre Caslon Text — escolhida <span class="veredito" style="display:block; margin-top:6px; text-transform:none; letter-spacing:0">O "a", o "&amp;" e os números são os mais próximos da carta anexada; o eixo mais robusto lê melhor em tela.</span></figcaption>
+      </figure>
+      <figure>
+        <p class="frase" style="font-family:'EB Garamond', Georgia, serif">Inscrições até 14 de outubro — custo US$ 1.700, com bolsa de até 100%.</p>
+        <figcaption class="caps caps--sec">EB Garamond — alternativa <span class="veredito" style="display:block; margin-top:6px; text-transform:none; letter-spacing:0">Mais elegante e mais frágil: em tamanhos pequenos some. Boa para impresso, arriscada para UI.</span></figcaption>
+      </figure>
+    </div>
+
+    <div class="escala">
+      <figure><span style="font:400 40px var(--serif)">Aa</span><figcaption class="caps caps--sec">Instrument Serif 40 — display</figcaption></figure>
+      <figure><span style="font:400 26px var(--corpo)">Aa</span><figcaption class="caps caps--sec">Libre Caslon 17 — corpo de carta</figcaption></figure>
+      <figure><span style="font:600 15px var(--sans)">Aa</span><figcaption class="caps caps--sec">Instrument Sans 15 — UI</figcaption></figure>
+      <figure><span style="font:500 15px var(--mono)">Aa</span><figcaption class="caps caps--sec">Plex Mono 13 — dados</figcaption></figure>
+      <figure><span style="font:400 21px var(--corpo); letter-spacing:.13em; color:var(--acento)">ADMITLY</span><figcaption class="caps caps--sec">Letterhead — Caslon caps espaçadas</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- ======== 04 · o gesto ======== -->
+  <section class="secao">
+    <header>
+      <span class="num">04</span><h2 class="caps">O gesto — traço de tinteiro</h2>
+      <span class="nota">regras do v2 intactas — a cor do grifo agora é o acento</span>
+    </header>
+
+    <div class="usos-gesto">
+      <div class="uso-gesto">
+        <p class="exemplo">Custo <span class="grifo">US$ 1.700<svg viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)"><use href="#traco-tinteiro"/></svg></span> — com bolsa de até 100%.</p>
+        <p class="regra">O acento grifa dinheiro e compatibilidade alta. Aparece no máximo
+        uma vez por tela — se tudo é grifado, nada é.</p>
+      </div>
+      <div class="uso-gesto">
+        <p class="exemplo">Prazo: <span class="grifo grifo--vermelho">3 dias<svg viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)"><use href="#traco-tinteiro"/></svg></span> para a primeira fase.</p>
+        <p class="regra">Vermelho-lacre só para urgência real (≤ 7 dias). Nunca decoração.</p>
+      </div>
+    </div>
+    <div class="fileira-gesto">
+      <p class="linha">O aluno que lê, escolhe e <span class="grifo grifo--lacre">aplica<svg viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)"><use href="#traco-tinteiro"/></svg></span> — tudo num só lugar.</p>
+      <p class="legenda">Lacre grifa a ação da marca em headlines. Em texto corrido, nunca.</p>
+    </div>
+  </section>
+
+  <!-- ======== 05 · a carta no produto ======== -->
+  <section class="secao">
+    <header>
+      <span class="num">05</span><h2 class="caps">A carta no produto</h2>
+      <span class="nota">novo — resposta à sua pergunta</span>
+    </header>
+
+    <p style="max-width:64ch; font-size:16.5px; line-height:1.7">
+      Minha resposta: sim — mas com uma regra. <strong style="font-weight:400">A carta não vira o app inteiro;
+      ela vira tudo que chega até o aluno.</strong> O que ele abre é carta (login, e-mail, notificação,
+      resposta do mentor). O que ele opera continua interface (filtros, listas, botões). Assim o
+      produto ganha a cerimônia da carta sem perder a agilidade de ferramenta.
+    </p>
+
+    <div class="grade-carta" style="margin-top:30px">
+      <div class="carta-email">
+        <div class="cabecalho-email"><span>DE: <strong>ADMITLY</strong></span><span>PARA: <strong>CAIO</strong></span><span>ASSUNTO: <strong>TRÊS PRAZOS EM OUTUBRO — E UM CONVITE</strong></span></div>
+        <div class="carta-interna">
+          <div class="letterhead">
+            <svg class="escudo" viewBox="0 0 40 48" aria-hidden="true">
+              <path d="M20 2.5 L37.5 8.5 V23.5 C37.5 35.5 30 43.5 20 46.5 C10 43.5 2.5 35.5 2.5 23.5 V8.5 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+              <path d="M20 7 L33 11.5 V23.5 C33 32.5 27.5 39 20 41.5 C12.5 39 7 32.5 7 23.5 V11.5 Z" fill="none" stroke="currentColor" stroke-width="1" opacity=".55"/>
+              <text x="20" y="31" text-anchor="middle" font-family="Libre Caslon Text, Georgia, serif" font-size="19" fill="currentColor">A</text>
+            </svg>
+            <div>
+              <div class="nome">Admitly</div>
+              <div class="setor">Oportunidades <em>&amp;</em> Admissões</div>
+            </div>
+          </div>
+          <div class="regra-dupla"></div>
+
+          <div class="carta-corpo">
+            <p>Prezado Caio,</p>
+            <p>Entre as 39 oportunidades verificadas para o seu perfil, três fecham as inscrições
+            este mês. A mais urgente é o Summer Science Program: prazo em 12 de outubro, custo de
+            US$ 1.700 — coberto por <span class="grifo">bolsa de até 100%<svg viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)"><use href="#traco-tinteiro"/></svg></span>, conforme a renda da família.</p>
+            <p>Não vamos prometer sorte. Vamos montar o calendário: o que entra agora, o que espera
+            a próxima janela, e o que vale um ensaio bem escrito.</p>
+          </div>
+
+          <div class="assinatura">
+            <span class="nome-assinado">Admitly<svg viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)"><use href="#traco-tinteiro"/></svg></span>
+            <span class="cargo">SEU ACERVO DE OPORTUNIDADES, EM ORDEM DE PRAZO</span>
+          </div>
+
+          <div class="carta-meta"><span>ENVELOPE Nº 002 · POSTAGEM: HOJE</span><span>RESPOSTA ESPERADA: NENHUMA — SÓ AÇÃO</span></div>
+        </div>
+      </div>
+
+      <div class="coluna-carta">
+        <article class="cartao-opp">
+          <div class="topo">
+            <span>OPORTUNIDADE Nº 014 · VERIFICADA 01 OUT</span>
+            <span class="tag-status"><span class="dot dot--lacre"></span>ABERTA</span>
+          </div>
+          <h4>Summer Science Program</h4>
+          <p class="linha-dados">Astrofísica · EUA · 11º ano — custo US$ 1.700, com <span class="grifo">até 100% de bolsa<svg viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)"><use href="#traco-tinteiro"/></svg></span>.</p>
+          <div class="base">
+            <span class="prazo-mono">FECHA EM 12 OUT 2026</span>
+            <button class="btn btn--secundario" type="button">Ver detalhes</button>
+          </div>
+        </article>
+
+        <div class="resposta-chat">
+          <span class="de">NO CHAT — RESPOSTA COMO CORRESPONDÊNCIA</span>
+          <p class="corpo">Há duas rotas para o SSP. A via olimpíada pede medalha; a via ensaio, não.
+          Pelo seu perfil, a segunda é a sua — e o prazo dela é mais folgado.</p>
+          <p class="fim">— Admitly</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="regra-carta"><strong>Regra prática:</strong> login = envelope · e-mail e notificação = carta ·
+    feed = cartões-papel com letterhead de linha · chat = correspondência. Nunca os três níveis de
+    cerimônia na mesma tela.</p>
+  </section>
+
+  <!-- ======== 06 · componentes ======== -->
+  <section class="secao">
+    <header>
+      <span class="num">06</span><h2 class="caps">Componentes</h2>
+      <span class="nota">botões em azul-tinta (novo) · dot de prazo médio vazado · campos em Caslon</span>
+    </header>
+
+    <div class="grade-comp">
+      <div class="comp">
+        <h3 class="caps caps--sec">Botões</h3>
+        <div class="linha-comp">
+          <button class="btn btn--primario">Entrar</button>
+          <button class="btn btn--secundario">Ver oportunidades</button>
+          <button class="btn btn--link">Criar conta</button>
+          <button class="btn btn--primario" disabled>Entrar</button>
+        </div>
+        <p class="obs">Retangular, raio 3px, sólido de azul-tinta — o botão é o lacre da carta. Disabled é
+        "tinta fraca", não cinza de sistema. Como botão, grifo e ponto do logo dividem o mesmo acento,
+        o resto da tela fica em papel e tinta.</p>
+      </div>
+
+      <div class="comp">
+        <h3 class="caps caps--sec">Dot de status</h3>
+        <div class="status">
+          <div class="item"><span class="dot dot--lacre"></span><span>Inscrições abertas</span><span class="quando">14 OUT 2026</span></div>
+          <div class="item"><span class="dot dot--vazado"></span><span>Fecha em 14 dias</span><span class="quando">14 OUT 2026</span></div>
+          <div class="item"><span class="dot dot--vermelho"></span><span>Fecha amanhã</span><span class="quando">04 OUT 2026</span></div>
+          <div class="item"><span class="dot dot--tinta"></span><span>Encerrada</span><span class="quando">01 FEV 2026</span></div>
+        </div>
+        <p class="obs">Refinamento v3: o prazo médio (1–14 dias) vira dot <em>vazado</em> — é agendamento, não cor
+        de marca. Assim o acento fica exclusivo de dinheiro/compatibilidade e o vermelho, de urgência real.</p>
+      </div>
+
+      <div class="comp">
+        <h3 class="caps caps--sec">Campo linha-de-formulário</h3>
+        <div class="campos-demo">
+          <div class="campo">
+            <label class="caps caps--sec" for="demo-email">Seu e-mail</label>
+            <input id="demo-email" type="email" placeholder="voce@exemplo.com">
+          </div>
+          <div class="campo">
+            <label class="caps caps--sec" for="demo-senha">Sua senha</label>
+            <input id="demo-senha" type="password" placeholder="••••••••">
+          </div>
+        </div>
+        <p class="obs">Sem caixa: só a linha. Foco sobe de hairline para lacre. O que você digita sai em Caslon —
+        é uma carta sendo escrita.</p>
+      </div>
+
+      <div class="comp">
+        <h3 class="caps caps--sec">Voz — títulos candidatos</h3>
+        <div class="vozes">
+          <div class="voz"><span class="num">a.</span><p class="frase">Sua carta de <em>admissão</em> está a caminho.</p></div>
+          <div class="voz"><span class="num">b.</span><p class="frase">A resposta vem depois. A estratégia começa agora.</p></div>
+          <div class="voz"><span class="num">c.</span><p class="frase">Menos sorte. <em>Mais plano.</em></p></div>
+          <div class="voz"><span class="num">d.</span><p class="frase">O prazo mais importante é o seu.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== 07 · login 1:1 ======== -->
+  <section class="secao">
+    <header>
+      <span class="num">07</span><h2 class="caps">Login 1:1</h2>
+      <span class="nota">letterhead completo — escudo + logo + régua dupla · corpo em Caslon · botões em azul-tinta</span>
+    </header>
+
+    <div class="tela-login">
+      <div class="marca">
+        <div class="letterhead-login">
+          <svg class="escudo" viewBox="0 0 40 48" aria-hidden="true">
+            <path d="M20 2.5 L37.5 8.5 V23.5 C37.5 35.5 30 43.5 20 46.5 C10 43.5 2.5 35.5 2.5 23.5 V8.5 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M20 7 L33 11.5 V23.5 C33 32.5 27.5 39 20 41.5 C12.5 39 7 32.5 7 23.5 V11.5 Z" fill="none" stroke="currentColor" stroke-width="1" opacity=".55"/>
+            <text x="20" y="31" text-anchor="middle" font-family="Libre Caslon Text, Georgia, serif" font-size="19" fill="currentColor">A</text>
+          </svg>
+          <div>
+            <div class="logo">Admit<em>ly</em><span class="ponto"></span><svg class="traco-logo" viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)"><use href="#traco-tinteiro"/></svg></div>
+            <div class="regra-dupla"></div>
+          </div>
+        </div>
+        <div class="meio">
+          <h2>Sua carta de <span class="grifo" style="font-style:italic">admissão<svg viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)"><use href="#traco-tinteiro"/></svg></span> está a caminho.</h2>
+          <p class="sub">Olimpíadas, pesquisas e programas de verão — com prazo, custo e
+          chance real, reunidos para o seu perfil.</p>
+          <p class="envelope">ENVELOPE Nº 001 · DESTINATÁRIO: VOCÊ · POSTAGEM: HOJE</p>
+        </div>
+        <p class="base caps caps--sec">Para estudantes brasileiros que olham para fora</p>
+      </div>
+
+      <form class="form" onsubmit="return false">
+        <span class="caps caps--sec">Acesso</span>
+        <h3>Entre na sua conta.</h3>
+        <div class="campo">
+          <label class="caps caps--sec" for="login-email">Seu e-mail</label>
+          <input id="login-email" type="email" placeholder="voce@exemplo.com">
+        </div>
+        <div class="campo">
+          <label class="caps caps--sec" for="login-senha">Sua senha</label>
+          <input id="login-senha" type="password" placeholder="••••••••">
+        </div>
+        <button class="btn btn--primario" type="submit">Entrar</button>
+        <div class="links">
+          <button class="btn btn--link" type="button">Criar conta</button>
+          <button class="btn btn--link" type="button">Esqueci a senha</button>
+        </div>
+        <p class="nota-mono">PLANO SÓ DEPOIS · SEM CARTÃO PARA ENTRAR</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ======== rodapé ======== -->
+  <footer class="rodape-mood">
+    <span class="caps caps--sec">Comparar com o v2 guardado → moodboard/carta-de-admissao-v2.html</span>
+    <span class="prox mono" style="font-size:11.5px">DECIDIR ACENTO → APLICAR NO PILOTO /LOGIN</span>
+  </footer>
+
+</main>
+
+<!-- controle de acento ao vivo (ferramenta do moodboard, não faz parte do produto) -->
+<div class="troca-acento" role="group" aria-label="Trocar acento">
+  <span>ACENTO</span>
+  <button data-acento="crimson" title="A · Crimson">A</button>
+  <button data-acento="azul" title="B · Azul-tinta">B</button>
+  <button data-acento="bronze" title="C · Bronze">C</button>
+  <button data-acento="tinta" title="D · Tinta pura">D</button>
+</div>
+
+<script>
+  const ACENTOS = {
+    crimson: { hex: '#7A1F2B', suave: 'rgba(122,31,43,.14)' },
+    azul:    { hex: '#1F3A5F', suave: 'rgba(31,58,95,.14)'  },
+    bronze:  { hex: '#8C6A2F', suave: 'rgba(140,106,47,.16)' },
+    tinta:   { hex: '#191512', suave: 'rgba(25,21,18,.12)'  }
+  };
+  function aplicarAcento(chave) {
+    const a = ACENTOS[chave];
+    if (!a) return;
+    const s = document.documentElement.style;
+    s.setProperty('--acento', a.hex);
+    s.setProperty('--acento-suave', a.suave);
+    const hex = document.getElementById('hex-acento');
+    if (hex) hex.textContent = a.hex;
+    document.querySelectorAll('[data-acento]').forEach(b =>
+      b.classList.toggle('ativo', b.dataset.acento === chave));
+  }
+  document.querySelectorAll('[data-acento]').forEach(b =>
+    b.addEventListener('click', () => aplicarAcento(b.dataset.acento)));
+  aplicarAcento('azul');
+</script>
+
+</body>
+</html>

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 
+// Chaves e valores dos campos são os MESMOS de sempre:
+// o chat e as recomendações leem user_metadata.perfil_academico — não renomear.
 const CAMPOS_INICIAIS = {
   objetivo: '',
   idade: '',
@@ -16,12 +18,7 @@ const CAMPOS_INICIAIS = {
   nivelIngles: '',
 }
 
-const camposTexto = [
-  { nome: 'idade', rotulo: 'Idade', tipo: 'number', placeholder: 'Ex: 17' },
-  { nome: 'areaInteresse', rotulo: 'Área ou curso de interesse', placeholder: 'Ex: Engenharia, Economia, Design' },
-  { nome: 'orcamento', rotulo: 'Orçamento aproximado', placeholder: 'Ex: R$ 80 mil por ano' },
-  { nome: 'paisPreferencia', rotulo: 'País ou região de preferência', placeholder: 'Ex: Estados Unidos ou Europa' },
-]
+const TOTAL_CAMPOS = Object.keys(CAMPOS_INICIAIS).length
 
 export default function Perfil() {
   const router = useRouter()
@@ -29,7 +26,8 @@ export default function Perfil() {
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [mensagem, setMensagem] = useState('')
-  const [erro, setErro] = useState('')
+  const [msgBoa, setMsgBoa] = useState(false)
+  const [ultimaAtualizacao, setUltimaAtualizacao] = useState('')
 
   useEffect(() => {
     const carregarPerfil = async () => {
@@ -39,7 +37,13 @@ export default function Perfil() {
         return
       }
 
-      setFormulario({ ...CAMPOS_INICIAIS, ...(user.user_metadata?.perfil_academico || {}) })
+      const salvo = user.user_metadata?.perfil_academico || {}
+      setFormulario({ ...CAMPOS_INICIAIS, ...salvo })
+      if (salvo.atualizado_em) {
+        try {
+          setUltimaAtualizacao(new Date(salvo.atualizado_em).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }))
+        } catch { /* ignore */ }
+      }
       setCarregando(false)
     }
 
@@ -49,22 +53,26 @@ export default function Perfil() {
   const atualizarCampo = (nome, valor) => {
     setFormulario((atual) => ({ ...atual, [nome]: valor }))
     setMensagem('')
-    setErro('')
   }
+
+  const preenchidos = Object.entries(formulario)
+    .filter(([chave, valor]) => chave !== 'atualizado_em' && String(valor).trim() !== '').length
 
   const salvarPerfil = async (event) => {
     event.preventDefault()
     setSalvando(true)
     setMensagem('')
-    setErro('')
 
     const { error } = await supabase.auth.updateUser({
-      data: { perfil_academico: formulario },
+      data: { perfil_academico: { ...formulario, atualizado_em: new Date().toISOString() } },
     })
 
     if (error) {
-      setErro('Não foi possível salvar seu perfil. Tente novamente.')
+      setMsgBoa(false)
+      setMensagem('Não foi possível salvar seu perfil. Tente novamente.')
     } else {
+      setMsgBoa(true)
+      setUltimaAtualizacao(new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }))
       setMensagem('Perfil salvo com sucesso.')
     }
     setSalvando(false)
@@ -72,67 +80,84 @@ export default function Perfil() {
 
   if (carregando) {
     return (
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>
-        Carregando perfil...
-      </div>
+      <main className="perfil-pagina">
+        <style>{CSS}</style>
+        <p className="carregando">Carregando perfil...</p>
+      </main>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f7f5f2' }}>
-      <header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '14px 20px',
-          borderBottom: '1px solid #e5e2dc',
-        }}
-      >
-        <strong style={{ fontSize: 16, color: '#57534e' }}>
-          Admit<span style={{ color: '#10b981' }}>ly</span>
-        </strong>
-        <a href="/chat" style={{ fontSize: 13, fontWeight: 600, color: '#57534e', textDecoration: 'none' }}>
-          ← Voltar ao chat
-        </a>
+    <main className="perfil-pagina">
+      <style>{CSS}</style>
+
+      {/* ===== topo ===== */}
+      <header className="perfil-topo">
+        <div className="marca-mini">
+          <svg className="marca-mini-escudo" viewBox="-60 -74 120 158" role="img" aria-label="Escudo Admitly">
+            <path d="M-56 -70 L56 -70 L56 5 C56 45 28 68 0 80 C-28 68 -56 45 -56 5 Z" fill="#F6F2EA" stroke="#1F3A5F" strokeWidth="5.5" />
+            <g transform="translate(0 -10) scale(1.02)">
+              <polygon points="-39,-9 39,-9 0,-36" fill="#1F3A5F" />
+              <rect x="-35" y="-6" width="70" height="4.5" fill="#1F3A5F" />
+              <rect x="-29" y="-1.5" width="10" height="25" fill="#1F3A5F" />
+              <rect x="-5" y="-1.5" width="10" height="25" fill="#1F3A5F" />
+              <rect x="19" y="-1.5" width="10" height="25" fill="#1F3A5F" />
+              <rect x="-36" y="23.5" width="72" height="4" fill="#1F3A5F" />
+              <rect x="-40" y="27.5" width="80" height="4.5" fill="#1F3A5F" />
+            </g>
+          </svg>
+          <span>Admitly</span>
+        </div>
+        <a className="btn-link" href="/chat">Voltar ao chat</a>
       </header>
 
-      <main style={{ maxWidth: 700, margin: '0 auto', padding: '32px 20px 48px' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a1a', marginBottom: 6 }}>
-          Meu perfil acadêmico
-        </h1>
-        <p style={{ fontSize: 13, color: '#888', lineHeight: 1.6, marginBottom: 24 }}>
-          Essas informações ajudam o Admitly a adaptar recomendações, prazos e universidades ao seu momento.
-        </p>
+      {/* ===== folha ===== */}
+      <div className="perfil-folha">
+        <header className="perfil-cabecalho">
+          <span className="caps-sec">Seu cadastro</span>
+          <h1>Meu perfil <em>acadêmico</em>.</h1>
+          <p>
+            Essas informações ajudam o Admitly a adaptar recomendações, prazos e universidades ao seu momento. Preencha com calma — quanto melhor você se conta, melhores ficam as indicações.
+          </p>
+        </header>
 
-        <form onSubmit={salvarPerfil} style={{ background: '#fff', borderRadius: 14, padding: 24, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#57534e', marginBottom: 6 }}>
-            Qual é seu objetivo?
-          </label>
-          <select
-            value={formulario.objetivo}
-            onChange={(event) => atualizarCampo('objetivo', event.target.value)}
-            style={estiloCampo}
-          >
-            <option value="">Selecione uma opção</option>
-            <option value="intercambio de curta duração">Intercâmbio de curta duração</option>
-            <option value="graduacao completa no exterior">Graduação completa no exterior</option>
-            <option value="ainda não decidi">Ainda não decidi</option>
-            <option value="outro">Outro</option>
-          </select>
+        <form className="perfil-form" onSubmit={salvarPerfil}>
+          <span className="caps-sec">Seu momento</span>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(90px, 120px) 1fr', gap: 12, marginTop: 16 }}>
-            <Campo
-              {...camposTexto[0]}
-              value={formulario.idade}
-              onChange={atualizarCampo}
-            />
-            <div>
-              <label style={estiloRotulo}>Ano escolar atual</label>
+          <div className="campo">
+            <label className="caps-sec" htmlFor="perfil-objetivo">Qual é seu objetivo?</label>
+            <select
+              id="perfil-objetivo"
+              value={formulario.objetivo}
+              onChange={(event) => atualizarCampo('objetivo', event.target.value)}
+            >
+              <option value="">Selecione uma opção</option>
+              <option value="intercambio de curta duração">Intercâmbio de curta duração</option>
+              <option value="graduacao completa no exterior">Graduação completa no exterior</option>
+              <option value="ainda não decidi">Ainda não decidi</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+
+          <div className="linha-duo">
+            <div className="campo">
+              <label className="caps-sec" htmlFor="perfil-idade">Idade</label>
+              <input
+                id="perfil-idade"
+                type="number"
+                min={10}
+                max={100}
+                placeholder="Ex: 17"
+                value={formulario.idade}
+                onChange={(event) => atualizarCampo('idade', event.target.value)}
+              />
+            </div>
+            <div className="campo">
+              <label className="caps-sec" htmlFor="perfil-ano">Ano escolar atual</label>
               <select
+                id="perfil-ano"
                 value={formulario.anoEscolar}
                 onChange={(event) => atualizarCampo('anoEscolar', event.target.value)}
-                style={estiloCampo}
               >
                 <option value="">Selecione</option>
                 <option value="8º ano do ensino fundamental">8º ano do ensino fundamental</option>
@@ -146,121 +171,208 @@ export default function Perfil() {
             </div>
           </div>
 
-          {camposTexto.slice(1).map((campo) => (
-            <Campo
-              key={campo.nome}
-              {...campo}
-              value={formulario[campo.nome]}
-              onChange={atualizarCampo}
+          <span className="caps-sec">Seu direcionamento</span>
+
+          <div className="campo">
+            <label className="caps-sec" htmlFor="perfil-area">Área ou curso de interesse</label>
+            <input
+              id="perfil-area"
+              type="text"
+              placeholder="Ex: Engenharia, Economia, Design"
+              value={formulario.areaInteresse}
+              onChange={(event) => atualizarCampo('areaInteresse', event.target.value)}
             />
-          ))}
+          </div>
 
-          <CampoArea
-            nome="notas"
-            rotulo="Como estão suas notas?"
-            placeholder="Ex: média 8,5; melhores notas em matemática e física"
-            value={formulario.notas}
-            onChange={atualizarCampo}
-          />
-          <CampoArea
-            nome="atividades"
-            rotulo="Atividades extracurriculares"
-            placeholder="Ex: iniciação científica, esporte, voluntariado, projetos"
-            value={formulario.atividades}
-            onChange={atualizarCampo}
-          />
+          <div className="linha-duo">
+            <div className="campo">
+              <label className="caps-sec" htmlFor="perfil-pais">País ou região de preferência</label>
+              <input
+                id="perfil-pais"
+                type="text"
+                placeholder="Ex: Estados Unidos ou Europa"
+                value={formulario.paisPreferencia}
+                onChange={(event) => atualizarCampo('paisPreferencia', event.target.value)}
+              />
+            </div>
+            <div className="campo">
+              <label className="caps-sec" htmlFor="perfil-orcamento">Orçamento aproximado</label>
+              <input
+                id="perfil-orcamento"
+                type="text"
+                placeholder="Ex: R$ 80 mil por ano"
+                value={formulario.orcamento}
+                onChange={(event) => atualizarCampo('orcamento', event.target.value)}
+              />
+            </div>
+          </div>
 
-          <label style={{ ...estiloRotulo, marginTop: 16 }}>Nível de inglês</label>
-          <select
-            value={formulario.nivelIngles}
-            onChange={(event) => atualizarCampo('nivelIngles', event.target.value)}
-            style={estiloCampo}
-          >
-            <option value="">Selecione uma opção</option>
-            <option value="iniciante">Iniciante</option>
-            <option value="intermediário">Intermediário</option>
-            <option value="avançado">Avançado</option>
-            <option value="fluente">Fluente</option>
-            <option value="ainda não sei">Ainda não sei</option>
-          </select>
+          <span className="caps-sec">Seus méritos</span>
 
-          {erro && <p style={{ color: '#dc2626', fontSize: 13, margin: '16px 0 0' }}>{erro}</p>}
-          {mensagem && <p style={{ color: '#059669', fontSize: 13, margin: '16px 0 0' }}>{mensagem}</p>}
+          <div className="campo">
+            <label className="caps-sec" htmlFor="perfil-notas">Como estão suas notas?</label>
+            <textarea
+              id="perfil-notas"
+              rows={3}
+              placeholder="Ex: média 8,5; melhores notas em matemática e física"
+              value={formulario.notas}
+              onChange={(event) => atualizarCampo('notas', event.target.value)}
+            />
+          </div>
 
-          <button
-            type="submit"
-            disabled={salvando}
-            style={{
-              width: '100%',
-              marginTop: 20,
-              padding: '12px 16px',
-              border: 'none',
-              borderRadius: 10,
-              background: salvando ? '#9ca3af' : '#10b981',
-              color: '#fff',
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: salvando ? 'default' : 'pointer',
-            }}
-          >
+          <div className="campo">
+            <label className="caps-sec" htmlFor="perfil-atividades">Atividades extracurriculares</label>
+            <textarea
+              id="perfil-atividades"
+              rows={3}
+              placeholder="Ex: iniciação científica, esporte, voluntariado, projetos"
+              value={formulario.atividades}
+              onChange={(event) => atualizarCampo('atividades', event.target.value)}
+            />
+          </div>
+
+          <div className="campo">
+            <label className="caps-sec" htmlFor="perfil-ingles">Nível de inglês</label>
+            <select
+              id="perfil-ingles"
+              value={formulario.nivelIngles}
+              onChange={(event) => atualizarCampo('nivelIngles', event.target.value)}
+            >
+              <option value="">Selecione uma opção</option>
+              <option value="iniciante">Iniciante</option>
+              <option value="intermediário">Intermediário</option>
+              <option value="avançado">Avançado</option>
+              <option value="fluente">Fluente</option>
+              <option value="ainda não sei">Ainda não sei</option>
+            </select>
+          </div>
+
+          {mensagem && (
+            <p className={`mensagem ${msgBoa ? 'mensagem--ok' : 'mensagem--erro'}`} role="status">
+              {mensagem}
+            </p>
+          )}
+
+          <button type="submit" className="btn-primario" disabled={salvando}>
             {salvando ? 'Salvando...' : 'Salvar perfil'}
           </button>
+
+          <p className="envelope">
+            <span>{preenchidos === TOTAL_CAMPOS ? 'PERFIL COMPLETO' : `PERFIL EM ANDAMENTO · ${preenchidos} DE ${TOTAL_CAMPOS} CAMPOS`}</span>
+            {ultimaAtualizacao && <span>ÚLTIMA ATUALIZAÇÃO: {ultimaAtualizacao}</span>}
+          </p>
         </form>
-      </main>
-    </div>
+      </div>
+    </main>
   )
 }
 
-function Campo({ nome, rotulo, tipo = 'text', placeholder, value, onChange }) {
-  return (
-    <div style={{ marginTop: 16 }}>
-      <label style={estiloRotulo}>{rotulo}</label>
-      <input
-        type={tipo}
-        value={value}
-        onChange={(event) => onChange(nome, event.target.value)}
-        placeholder={placeholder}
-        min={tipo === 'number' ? 10 : undefined}
-        max={tipo === 'number' ? 100 : undefined}
-        style={estiloCampo}
-      />
-    </div>
-  )
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap');
+
+.perfil-pagina{
+  --papel:#F6F2EA; --papel-elev:#FCFAF5; --tinta:#191512; --tinta-sec:#5C554B; --hairline:#E2DACB;
+  --lacre:#1A4D3A; --vermelho:#A6301F; --acento:#1F3A5F;
+  --serif:'Instrument Serif',Georgia,serif; --corpo:'Libre Caslon Text',Georgia,serif;
+  --sans:'Instrument Sans','Helvetica Neue',sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  min-height:100vh; background:var(--papel); color:var(--tinta);
+  font-family:var(--corpo); -webkit-font-smoothing:antialiased;
+}
+.perfil-pagina h1, .perfil-pagina p{ margin:0; }
+
+.carregando{
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-size:12px; letter-spacing:.08em; color:var(--tinta-sec);
 }
 
-function CampoArea({ nome, rotulo, placeholder, value, onChange }) {
-  return (
-    <div style={{ marginTop: 16 }}>
-      <label style={estiloRotulo}>{rotulo}</label>
-      <textarea
-        value={value}
-        onChange={(event) => onChange(nome, event.target.value)}
-        placeholder={placeholder}
-        rows={3}
-        style={{ ...estiloCampo, resize: 'vertical', lineHeight: 1.5 }}
-      />
-    </div>
-  )
+/* ===== topo ===== */
+.perfil-topo{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:16px 28px; border-bottom:1px solid var(--hairline);
+}
+.marca-mini{ display:flex; align-items:center; gap:10px; }
+.marca-mini-escudo{ width:20px; height:auto; }
+.marca-mini span{
+  font-family:var(--sans); font-weight:600; font-size:12px;
+  text-transform:uppercase; letter-spacing:.18em; color:var(--acento);
+}
+.btn-link{
+  font:600 13px/1 var(--sans); color:var(--acento);
+  text-decoration:underline; text-underline-offset:4px; text-decoration-thickness:1.5px;
+}
+.btn-link:hover{ color:#19304E; }
+
+/* ===== folha ===== */
+.perfil-folha{ max-width:680px; margin:0 auto; padding:44px 24px 72px; }
+
+.perfil-cabecalho h1{ font:400 44px/1.1 var(--serif); letter-spacing:-.005em; margin-top:10px; }
+.perfil-cabecalho h1 em{ font-style:italic; }
+.perfil-cabecalho p{ margin-top:16px; font-size:16.5px; line-height:1.75; color:var(--tinta-sec); max-width:52ch; }
+
+/* ===== formulário ===== */
+.perfil-form{
+  margin-top:36px; background:var(--papel-elev); border:1px solid var(--hairline); border-radius:8px;
+  padding:44px 48px 36px; display:flex; flex-direction:column; gap:26px;
+}
+.perfil-form .caps-sec{ margin-bottom:-14px; }
+.caps-sec{
+  font-family:var(--sans); text-transform:uppercase; letter-spacing:.16em;
+  font-size:11px; font-weight:600; color:var(--tinta-sec);
 }
 
-const estiloRotulo = {
-  display: 'block',
-  fontSize: 13,
-  fontWeight: 600,
-  color: '#57534e',
-  marginBottom: 6,
+.linha-duo{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+
+.campo{ display:flex; flex-direction:column; gap:6px; }
+.campo input, .campo select, .campo textarea{
+  border:0; border-bottom:1px solid var(--hairline); background:transparent; border-radius:0;
+  padding:9px 2px; font:400 16px var(--corpo); color:var(--tinta);
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+.campo textarea{ resize:vertical; line-height:1.6; min-height:72px; }
+.campo select{
+  appearance:none; -webkit-appearance:none; cursor:pointer; padding-right:20px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%235C554B' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 2px center; background-size:12px 8px;
+}
+.campo input::placeholder, .campo textarea::placeholder{ color:#B4AB9C; }
+.campo input:focus, .campo select:focus, .campo textarea:focus{
+  outline:none; border-bottom-color:var(--lacre); box-shadow:0 1px 0 0 var(--lacre);
 }
 
-const estiloCampo = {
-  display: 'block',
-  width: '100%',
-  boxSizing: 'border-box',
-  padding: '10px 12px',
-  border: '1px solid #ddd',
-  borderRadius: 9,
-  background: '#fff',
-  color: '#1a1a1a',
-  fontSize: 14,
-  fontFamily: 'inherit',
-  outline: 'none',
+.mensagem{ font-family:var(--mono); font-size:12px; letter-spacing:.02em; }
+.mensagem--ok{ color:var(--lacre); }
+.mensagem--erro{ color:var(--vermelho); }
+
+.btn-primario{
+  font:600 15px/1 var(--sans); letter-spacing:.01em; width:100%;
+  padding:13px 24px; border-radius:3px; cursor:pointer;
+  background:var(--acento); color:var(--papel-elev); border:1px solid var(--acento);
+  transition:background-color .15s ease, border-color .15s ease;
 }
+.btn-primario:hover{ background:#19304E; border-color:#19304E; }
+.btn-primario:disabled{ background:#DAD2C2; border-color:#DAD2C2; color:#8F8678; cursor:not-allowed; }
+
+.envelope{
+  display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  padding-top:18px; border-top:1px solid var(--hairline);
+  font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:var(--tinta-sec);
+}
+
+@media (max-width:640px){
+  .perfil-topo{ padding:8px 16px; gap:4px 8px; flex-wrap:wrap; }
+  .perfil-nav{ flex:1 1 100%; justify-content:space-between; gap:8px; }
+  /* alvos de toque: 44px de altura é o mínimo confortável no polegar */
+  .perfil-nav > a{ font-size:13px; padding:15px 6px; }
+  .btn-conta{ width:40px; height:40px; }
+  /* o link de voltar ganha área de toque generosa no polegar */
+  .perfil-topo .btn-link{ display:inline-block; padding:14px 10px; }
+  /* marca compacta na linha de cima */
+  .marca-mini-escudo{ width:18px; }
+  .marca-mini span{ font-size:11px; letter-spacing:.14em; }
+  .perfil-folha{ padding:32px 16px 56px; }
+  .perfil-form{ padding:32px 20px 24px; }
+  .perfil-cabecalho h1{ font-size:34px; }
+  .linha-duo{ grid-template-columns:1fr; }
+  .perfil-form input, .perfil-form select{ font-size:16px; }
+}
+`

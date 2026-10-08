@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useReducer, useRef, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
+import { temAssinaturaAtiva } from '../../lib/subscriptions.js'
 
 const PASSOS_ONBOARDING = [
   {
@@ -19,40 +20,16 @@ const PASSOS_ONBOARDING = [
   },
 ]
 
+// Chips clicáveis: linhas "TAREFA: ..." e "UNIVERSIDADE: ..." viram ações.
 function renderizarMensagem(texto, aoAdicionarTarefa, aoAdicionarUniversidade) {
   const linhas = texto.split('\n')
   return linhas.map((linha, i) => {
     if (linha.startsWith('TAREFA: ')) {
       const tarefaTexto = linha.replace('TAREFA: ', '')
       return (
-        <div
-          key={i}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 10,
-            background: '#f4f4f4',
-            borderRadius: 8,
-            padding: '8px 12px',
-            margin: '4px 0',
-          }}
-        >
-          <span style={{ fontSize: 14 }}>{tarefaTexto}</span>
-          <button
-            onClick={() => aoAdicionarTarefa(tarefaTexto)}
-            style={{
-              flexShrink: 0,
-              fontSize: 12,
-              fontWeight: 600,
-              padding: '4px 10px',
-              borderRadius: 6,
-              border: 'none',
-              background: '#10b981',
-              color: '#fff',
-              cursor: 'pointer',
-            }}
-          >
+        <div key={i} className="chip-linha">
+          <span>{tarefaTexto}</span>
+          <button type="button" className="chip-btn" onClick={() => aoAdicionarTarefa(tarefaTexto)}>
             + Adicionar
           </button>
         </div>
@@ -61,35 +38,9 @@ function renderizarMensagem(texto, aoAdicionarTarefa, aoAdicionarUniversidade) {
     if (linha.startsWith('UNIVERSIDADE: ')) {
       const nomeUniversidade = linha.replace('UNIVERSIDADE: ', '')
       return (
-        <div
-          key={i}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 10,
-            background: '#ecfdf5',
-            border: '1px solid #a7f3d0',
-            borderRadius: 8,
-            padding: '8px 12px',
-            margin: '4px 0',
-          }}
-        >
-          <span style={{ fontSize: 14, fontWeight: 600 }}>🎓 {nomeUniversidade}</span>
-          <button
-            onClick={() => aoAdicionarUniversidade(nomeUniversidade)}
-            style={{
-              flexShrink: 0,
-              fontSize: 12,
-              fontWeight: 600,
-              padding: '4px 10px',
-              borderRadius: 6,
-              border: 'none',
-              background: '#10b981',
-              color: '#fff',
-              cursor: 'pointer',
-            }}
-          >
+        <div key={i} className="chip-linha chip-linha--univ">
+          <span className="chip-univ-nome">{nomeUniversidade}</span>
+          <button type="button" className="chip-btn" onClick={() => aoAdicionarUniversidade(nomeUniversidade)}>
             + Minhas aplicações
           </button>
         </div>
@@ -98,6 +49,16 @@ function renderizarMensagem(texto, aoAdicionarTarefa, aoAdicionarUniversidade) {
     return <div key={i}>{linha || '\u00A0'}</div>
   })
 }
+
+// Subscrição ao evento 'storage' para o useSyncExternalStore do onboarding:
+// cobre mudanças vindas de outras abas; na mesma aba quem força a releitura é
+// o re-render manual em fecharOnboarding.
+const inscreverStorage = (aoMudar) => {
+  window.addEventListener('storage', aoMudar)
+  return () => window.removeEventListener('storage', aoMudar)
+}
+const lerOnboardingVisto = () => localStorage.getItem('admitly_onboarding_visto') !== null
+const onboardingVistoNoServidor = () => true
 
 export default function Chat() {
   const router = useRouter()
@@ -109,23 +70,22 @@ export default function Chat() {
   const [carregandoHistorico, setCarregandoHistorico] = useState(true)
   const [aviso, setAviso] = useState('')
   const [menuAberto, setMenuAberto] = useState(false)
-  const [mostrarOnboarding, setMostrarOnboarding] = useState(false)
   const [passoAtual, setPassoAtual] = useState(0)
   const fimDasMensagens = useRef(null)
-
-  const corDestaque = '#10b981'
-  const corContraste = '#57534e'
 
   useEffect(() => {
     fimDasMensagens.current?.scrollIntoView({ behavior: 'smooth' })
   }, [mensagens])
 
-  useEffect(() => {
-    const jaViu = typeof window !== 'undefined' && localStorage.getItem('admitly_onboarding_visto')
-    if (!jaViu) {
-      setMostrarOnboarding(true)
-    }
-  }, [])
+  // O flag "já viu o onboarding" vive no localStorage — uma fonte externa ao React.
+  // Em vez de um effect com setState (que causava render em cascata), derivamos a
+  // visibilidade com useSyncExternalStore: sem estado duplicado e, como o snapshot
+  // do servidor é "já visto", a hidratação nunca diverge do HTML renderizado.
+  // Na mesma aba o evento 'storage' não dispara, então fecharOnboarding força a
+  // releitura com um re-render manual.
+  const [, relerStorage] = useReducer((x) => x + 1, 0)
+  const onboardingVisto = useSyncExternalStore(inscreverStorage, lerOnboardingVisto, onboardingVistoNoServidor)
+  const mostrarOnboarding = !onboardingVisto
 
   useEffect(() => {
     const iniciar = async () => {
@@ -136,14 +96,9 @@ export default function Chat() {
       }
       setUserId(user.id)
 
-      const { data: assinatura } = await supabase
-        .from('subscriptions')
-        .select('status')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .maybeSingle()
+      const ativa = await temAssinaturaAtiva(supabase, user.id)
 
-      if (!assinatura) {
+      if (!ativa) {
         router.push('/assinar')
         return
       }
@@ -186,7 +141,7 @@ export default function Chat() {
 
   const fecharOnboarding = () => {
     localStorage.setItem('admitly_onboarding_visto', '1')
-    setMostrarOnboarding(false)
+    relerStorage()
     setPassoAtual(0)
   }
 
@@ -229,7 +184,7 @@ export default function Chat() {
   }
 
   const enviarMensagem = async () => {
-    if (!input.trim() || !conversationId) return
+    if (!input.trim() || !conversationId || carregando) return
 
     const textoUsuario = input
     setMensagens((prev) => [...prev, { remetente: 'usuario', texto: textoUsuario }])
@@ -305,114 +260,44 @@ export default function Chat() {
 
   if (carregandoHistorico) {
     return (
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>
-        Carregando conversa...
-      </div>
+      <main className="chat-pagina">
+        <style>{CSS}</style>
+        <p className="carregando">Carregando conversa...</p>
+      </main>
     )
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f7f5f2' }}>
-      <style>{`
-        .chat-input::placeholder {
-          color: ${corContraste};
-          opacity: 1;
-        }
-      `}</style>
+    <div className="chat-pagina">
+      <style>{CSS}</style>
 
       {mostrarOnboarding && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.4)',
-            zIndex: 100,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 20,
-          }}
-        >
-          <div
-            style={{
-              background: '#fff',
-              borderRadius: 16,
-              padding: 32,
-              maxWidth: 380,
-              width: '100%',
-              textAlign: 'center',
-            }}
-          >
-            <span
-              style={{
-                display: 'inline-grid',
-                placeItems: 'center',
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-                background: '#ecfdf5',
-                color: corDestaque,
-                marginBottom: 16,
-              }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
-                <path d="M22 10v6" />
-                <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
-              </svg>
-            </span>
-            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 10 }}>
-              {PASSOS_ONBOARDING[passoAtual].titulo}
-            </h2>
-            <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6, marginBottom: 24 }}>
-              {PASSOS_ONBOARDING[passoAtual].texto}
-            </p>
+        <div className="onb-fundo" role="dialog" aria-modal="true">
+          <div className="onb-cartao">
+            <svg className="onb-escudo" viewBox="-60 -74 120 158" aria-hidden="true">
+              <path d="M-56 -70 L56 -70 L56 5 C56 45 28 68 0 80 C-28 68 -56 45 -56 5 Z" fill="#F6F2EA" stroke="#1F3A5F" strokeWidth="5.5" />
+              <g transform="translate(0 -10) scale(1.02)">
+                <polygon points="-39,-9 39,-9 0,-36" fill="#1F3A5F" />
+                <rect x="-35" y="-6" width="70" height="4.5" fill="#1F3A5F" />
+                <rect x="-29" y="-1.5" width="10" height="25" fill="#1F3A5F" />
+                <rect x="-5" y="-1.5" width="10" height="25" fill="#1F3A5F" />
+                <rect x="19" y="-1.5" width="10" height="25" fill="#1F3A5F" />
+                <rect x="-36" y="23.5" width="72" height="4" fill="#1F3A5F" />
+                <rect x="-40" y="27.5" width="80" height="4.5" fill="#1F3A5F" />
+              </g>
+            </svg>
+            <h2>{PASSOS_ONBOARDING[passoAtual].titulo}</h2>
+            <p>{PASSOS_ONBOARDING[passoAtual].texto}</p>
 
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 20 }}>
+            <div className="onb-pontos">
               {PASSOS_ONBOARDING.map((_, i) => (
-                <span
-                  key={i}
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    background: i === passoAtual ? corDestaque : '#e5e2dc',
-                  }}
-                />
+                <span key={i} className={i === passoAtual ? 'ponto ativo' : 'ponto'} />
               ))}
             </div>
 
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                onClick={fecharOnboarding}
-                style={{
-                  flex: 1,
-                  padding: '10px 0',
-                  border: '1px solid #ddd',
-                  borderRadius: 10,
-                  background: '#fff',
-                  color: corContraste,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Pular
-              </button>
-              <button
-                onClick={proximoPasso}
-                style={{
-                  flex: 1,
-                  padding: '10px 0',
-                  border: 'none',
-                  borderRadius: 10,
-                  background: corDestaque,
-                  color: '#fff',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
+            <div className="onb-botoes">
+              <button type="button" className="btn-fantasma" onClick={fecharOnboarding}>Pular</button>
+              <button type="button" className="btn-primario" onClick={proximoPasso}>
                 {passoAtual < PASSOS_ONBOARDING.length - 1 ? 'Próximo' : 'Começar'}
               </button>
             </div>
@@ -420,197 +305,91 @@ export default function Chat() {
         </div>
       )}
 
-      <header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '14px 20px',
-          borderBottom: '1px solid #e5e2dc',
-          position: 'relative',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span
-            style={{
-              display: 'grid',
-              placeItems: 'center',
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              background: corDestaque,
-              color: '#fff',
-            }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
-              <path d="M22 10v6" />
-              <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
-            </svg>
-          </span>
-          <span style={{ fontWeight: 700, fontSize: 16 }}>
-            <span style={{ color: corContraste }}>Admit</span>
-            <span style={{ color: corDestaque }}>ly</span>
-          </span>
+      {/* ===== topo ===== */}
+      <header className="chat-topo">
+        <div className="marca-mini">
+          <svg className="marca-mini-escudo" viewBox="-60 -74 120 158" role="img" aria-label="Escudo Admitly">
+            <path d="M-56 -70 L56 -70 L56 5 C56 45 28 68 0 80 C-28 68 -56 45 -56 5 Z" fill="#F6F2EA" stroke="#1F3A5F" strokeWidth="5.5" />
+            <g transform="translate(0 -10) scale(1.02)">
+              <polygon points="-39,-9 39,-9 0,-36" fill="#1F3A5F" />
+              <rect x="-35" y="-6" width="70" height="4.5" fill="#1F3A5F" />
+              <rect x="-29" y="-1.5" width="10" height="25" fill="#1F3A5F" />
+              <rect x="-5" y="-1.5" width="10" height="25" fill="#1F3A5F" />
+              <rect x="19" y="-1.5" width="10" height="25" fill="#1F3A5F" />
+              <rect x="-36" y="23.5" width="72" height="4" fill="#1F3A5F" />
+              <rect x="-40" y="27.5" width="80" height="4.5" fill="#1F3A5F" />
+            </g>
+          </svg>
+          <span>Admitly</span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <a
-            href="/aplicacoes"
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: corContraste,
-              textDecoration: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
-              <path d="M22 10v6" />
-              <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
-            </svg>
-            Minhas aplicações
-          </a>
-
-          <div style={{ position: 'relative' }}>
+        <nav className="chat-nav">
+          <a href="/oportunidades">Oportunidades</a>
+          <a href="/aplicacoes">Aplicações</a>
+          <a href="/perfil">Perfil</a>
+          <div className="menu-conta">
             <button
+              type="button"
+              className="btn-conta"
               onClick={() => setMenuAberto((v) => !v)}
               aria-label="Menu da conta"
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                border: '1px solid #e5e2dc',
-                background: '#fff',
-                cursor: 'pointer',
-                display: 'grid',
-                placeItems: 'center',
-                color: corContraste,
-              }}
+              aria-expanded={menuAberto}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
             </button>
             {menuAberto && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 40,
-                  right: 0,
-                  background: '#fff',
-                  border: '1px solid #e5e2dc',
-                  borderRadius: 10,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                  overflow: 'hidden',
-                  zIndex: 10,
-                }}
-              >
-                <a
-                  href="/perfil"
-                  style={{
-                    display: 'block',
-                    padding: '10px 18px',
-                    color: corContraste,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Meu perfil acadêmico
-                </a>
-                <button
-                  onClick={sair}
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    padding: '10px 18px',
-                    border: 'none',
-                    background: 'transparent',
-                    color: '#dc2626',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    textAlign: 'left',
-                  }}
-                >
-                  Sair da conta
-                </button>
+              <div className="menu-popover" role="menu">
+                <a href="/perfil" role="menuitem">Meu perfil acadêmico</a>
+                <button type="button" role="menuitem" className="menu-sair" onClick={sair}>Sair da conta</button>
               </div>
             )}
           </div>
-        </div>
+        </nav>
       </header>
 
       {aviso && (
-        <div style={{ background: '#ecfdf5', color: corDestaque, fontSize: 13, textAlign: 'center', padding: 8 }}>
-          {aviso} ✓
+        <div className="chat-aviso" role="status">
+          {aviso}
         </div>
       )}
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '24px 0' }}>
-        <div style={{ maxWidth: 700, margin: '0 auto', padding: '0 20px' }}>
+      {/* ===== conversa ===== */}
+      <div className="chat-fluxo">
+        <div className="chat-coluna">
+          {mensagens.length === 0 && (
+            <div className="chat-vazio">
+              <p className="caps-sec">Sua conversa com o Admitly</p>
+              <h2>Por onde <em>começamos?</em></h2>
+              <p className="chat-vazio-sub">
+                Conte o que você procura — ou pergunte o que quiser saber sobre intercâmbios, universidades e candidaturas.
+              </p>
+            </div>
+          )}
+
           {mensagens.map((msg, i) => (
-            <div
-              key={i}
-              style={{
-                marginBottom: 24,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: msg.remetente === 'usuario' ? 'flex-end' : 'flex-start',
-              }}
-            >
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#999', marginBottom: 6 }}>
-                {msg.remetente === 'usuario' ? 'Você' : 'Admitly'}
-              </div>
+            <div key={i} className={`mensagem ${msg.remetente === 'usuario' ? 'mensagem--usuario' : 'mensagem--admitly'}`}>
+              <div className="mensagem-de">{msg.remetente === 'usuario' ? 'VOCÊ' : 'ADMITLY'}</div>
               {msg.remetente === 'usuario' ? (
-                <div
-                  style={{
-                    background: '#ece9e4',
-                    borderRadius: 14,
-                    padding: '10px 16px',
-                    maxWidth: '80%',
-                    fontSize: 15,
-                    lineHeight: 1.6,
-                    color: '#1a1a1a',
-                    whiteSpace: 'pre-wrap',
-                  }}
-                >
-                  {msg.texto}
-                </div>
+                <div className="balao-usuario">{msg.texto}</div>
               ) : (
-                <div style={{ fontSize: 15, lineHeight: 1.6, color: '#1a1a1a', width: '100%' }}>
+                <div className="corpo-admitly">
                   {renderizarMensagem(msg.texto, adicionarTarefa, adicionarUniversidade)}
                 </div>
               )}
             </div>
           ))}
-          {carregando && (
-            <div style={{ fontSize: 13, color: '#999' }}>Admitly está digitando...</div>
-          )}
+          {carregando && <div className="digitando">Admitly está escrevendo<span className="pontos">...</span></div>}
           <div ref={fimDasMensagens} />
         </div>
       </div>
 
-      <div style={{ padding: '16px 20px 8px' }}>
-        <div style={{ maxWidth: 700, margin: '0 auto' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'flex-end',
-              gap: 8,
-              border: '1px solid #ddd',
-              borderRadius: 16,
-              padding: '10px 10px 10px 16px',
-              background: '#efece7',
-            }}
-          >
+      {/* ===== composição ===== */}
+      <div className="chat-composicao">
+        <div className="composicao-interna">
+          <div className="compositor">
             <textarea
               className="chat-input"
               value={input}
@@ -621,49 +400,194 @@ export default function Chat() {
                   enviarMensagem()
                 }
               }}
-              placeholder="Escreva sua mensagem para o Admitly..."
+              placeholder="Escreva para o Admitly..."
               rows={1}
-              style={{
-                flex: 1,
-                border: 'none',
-                outline: 'none',
-                background: 'transparent',
-                resize: 'none',
-                fontSize: 15,
-                fontFamily: 'inherit',
-                padding: '6px 0',
-                maxHeight: 160,
-                color: '#1a1a1a',
-              }}
             />
             <button
+              type="button"
+              className="btn-enviar"
               onClick={enviarMensagem}
-              disabled={!input.trim()}
+              disabled={!input.trim() || carregando}
               aria-label="Enviar mensagem"
-              style={{
-                display: 'grid',
-                placeItems: 'center',
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                border: 'none',
-                background: input.trim() ? corDestaque : '#ddd',
-                color: '#fff',
-                cursor: input.trim() ? 'pointer' : 'default',
-                flexShrink: 0,
-              }}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14" />
                 <path d="m12 5 7 7-7 7" />
               </svg>
             </button>
           </div>
-          <p style={{ textAlign: 'center', fontSize: 11, color: '#aaa', margin: '10px 0 4px' }}>
-            Admitly é uma IA e pode cometer erros. Confirme informações importantes.
-          </p>
+          <p className="disclaimer">Admitly é uma IA e pode cometer erros. Confirme informações importantes.</p>
         </div>
       </div>
     </div>
   )
 }
+
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap');
+
+.chat-pagina{
+  --papel:#F6F2EA; --papel-elev:#FCFAF5; --tinta:#191512; --tinta-sec:#5C554B; --hairline:#E2DACB;
+  --lacre:#1A4D3A; --vermelho:#A6301F; --acento:#1F3A5F;
+  --serif:'Instrument Serif',Georgia,serif; --corpo:'Libre Caslon Text',Georgia,serif;
+  --sans:'Instrument Sans','Helvetica Neue',sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  display:flex; flex-direction:column; height:100vh; background:var(--papel); color:var(--tinta);
+  font-family:var(--corpo); -webkit-font-smoothing:antialiased;
+}
+.chat-pagina h2, .chat-pagina p{ margin:0; }
+
+.carregando{
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-size:12px; letter-spacing:.08em; color:var(--tinta-sec);
+}
+.caps-sec{
+  font-family:var(--sans); text-transform:uppercase; letter-spacing:.16em;
+  font-size:11px; font-weight:600; color:var(--tinta-sec);
+}
+
+/* ===== topo ===== */
+.chat-topo{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:14px 24px; border-bottom:1px solid var(--hairline); background:var(--papel);
+}
+.marca-mini{ display:flex; align-items:center; gap:10px; }
+.marca-mini-escudo{ width:22px; height:auto; }
+.marca-mini span{
+  font-family:var(--sans); font-weight:600; font-size:12px;
+  text-transform:uppercase; letter-spacing:.18em; color:var(--acento);
+}
+.chat-nav{ display:flex; align-items:center; gap:20px; }
+.chat-nav a{
+  font:600 13px/1 var(--sans); color:var(--tinta-sec); text-decoration:none;
+}
+.chat-nav a:hover{ color:var(--acento); }
+.menu-conta{ position:relative; }
+.btn-conta{
+  width:30px; height:30px; border-radius:50%; border:1px solid var(--hairline);
+  background:var(--papel-elev); color:var(--tinta-sec); cursor:pointer;
+  display:grid; place-items:center; transition:border-color .15s ease, color .15s ease;
+}
+.btn-conta:hover{ border-color:var(--acento); color:var(--acento); }
+.menu-popover{
+  position:absolute; top:38px; right:0; z-index:30; min-width:190px;
+  background:var(--papel-elev); border:1px solid var(--hairline); border-radius:4px; overflow:hidden;
+}
+.menu-popover a, .menu-sair{
+  display:block; width:100%; padding:11px 16px; text-align:left;
+  font:600 13px/1 var(--sans); color:var(--tinta); text-decoration:none;
+  border:0; background:transparent; cursor:pointer;
+}
+.menu-popover a:hover, .menu-sair:hover{ background:rgba(31,58,95,.06); }
+.menu-sair{ color:var(--vermelho) !important; }
+
+/* ===== aviso ===== */
+.chat-aviso{
+  padding:8px 20px; text-align:center;
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.04em;
+  color:var(--lacre); background:rgba(26,77,58,.07); border-bottom:1px solid var(--hairline);
+}
+
+/* ===== conversa ===== */
+.chat-fluxo{ flex:1; overflow-y:auto; padding:28px 0 16px; }
+.chat-coluna{ max-width:680px; margin:0 auto; padding:0 20px; }
+
+.chat-vazio{ padding:36px 0 44px; }
+.chat-vazio h2{ font:400 38px/1.15 var(--serif); letter-spacing:-.005em; margin-top:10px; }
+.chat-vazio h2 em{ font-style:italic; }
+.chat-vazio-sub{ margin-top:12px; font-size:16px; line-height:1.7; color:var(--tinta-sec); max-width:48ch; }
+
+.mensagem{ margin-bottom:26px; display:flex; flex-direction:column; }
+.mensagem--usuario{ align-items:flex-end; }
+.mensagem--admitly{ align-items:flex-start; }
+.mensagem-de{
+  font-family:var(--mono); font-size:10px; letter-spacing:.16em; color:var(--tinta-sec); margin-bottom:6px;
+}
+.balao-usuario{
+  background:var(--papel-elev); border:1px solid var(--hairline); border-radius:6px 6px 2px 6px;
+  padding:11px 16px; max-width:80%; font-size:15.5px; line-height:1.65; white-space:pre-wrap;
+}
+.corpo-admitly{ font-size:16px; line-height:1.75; max-width:58ch; }
+.corpo-admitly .chip-linha{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  border:1px solid var(--hairline); border-left:3px solid var(--acento); border-radius:3px;
+  background:var(--papel-elev); padding:9px 12px; margin:8px 0; font-size:14.5px;
+}
+.chip-linha--univ{ border-left-color:var(--lacre); }
+.chip-univ-nome{ font-weight:700; }
+.chip-btn{
+  flex:none; font:600 12px/1 var(--sans); padding:6px 11px; border-radius:3px; cursor:pointer;
+  border:1px solid var(--acento); background:transparent; color:var(--acento);
+  transition:background-color .15s ease, color .15s ease;
+}
+.chip-btn:hover{ background:var(--acento); color:var(--papel-elev); }
+.digitando{ font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; color:var(--tinta-sec); }
+
+/* ===== composição ===== */
+.chat-composicao{ padding:14px 20px 10px; border-top:1px solid var(--hairline); background:var(--papel); }
+.composicao-interna{ max-width:680px; margin:0 auto; }
+.compositor{
+  display:flex; align-items:flex-end; gap:8px;
+  border:1px solid var(--hairline); border-radius:4px; background:var(--papel-elev);
+  padding:10px 10px 10px 16px; transition:border-color .15s ease;
+}
+.compositor:focus-within{ border-color:var(--lacre); }
+.chat-input{
+  flex:1; border:0; outline:none; background:transparent; resize:none;
+  font:400 15.5px/1.5 var(--corpo); color:var(--tinta); padding:6px 0; max-height:160px;
+}
+.chat-input::placeholder{ color:#B4AB9C; }
+.btn-enviar{
+  display:grid; place-items:center; width:34px; height:34px; border-radius:3px; flex:none;
+  border:1px solid var(--acento); background:var(--acento); color:var(--papel-elev); cursor:pointer;
+  transition:background-color .15s ease, border-color .15s ease, opacity .15s ease;
+}
+.btn-enviar:disabled{ background:transparent; border-color:var(--hairline); color:var(--tinta-sec); cursor:default; opacity:.7; }
+.btn-enviar:not(:disabled):hover{ background:#19304E; border-color:#19304E; }
+.disclaimer{
+  text-align:center; margin:10px 0 4px;
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.05em; color:var(--tinta-sec);
+}
+
+/* ===== onboarding ===== */
+.onb-fundo{
+  position:fixed; inset:0; z-index:100; padding:20px;
+  background:rgba(25,21,18,.35); display:flex; align-items:center; justify-content:center;
+}
+.onb-cartao{
+  background:var(--papel-elev); border:1px solid var(--hairline); border-radius:8px;
+  padding:36px 32px 28px; max-width:380px; width:100%; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:0;
+}
+.onb-escudo{ width:40px; height:auto; margin-bottom:16px; }
+.onb-cartao h2{ font:400 24px/1.2 var(--serif); }
+.onb-cartao p{ margin-top:12px; font-size:14.5px; line-height:1.65; color:var(--tinta-sec); }
+.onb-pontos{ display:flex; gap:6px; margin:22px 0 20px; }
+.onb-pontos .ponto{ width:6px; height:6px; border-radius:50%; background:var(--hairline); }
+.onb-pontos .ponto.ativo{ background:var(--acento); }
+.onb-botoes{ display:flex; gap:8px; width:100%; }
+.btn-fantasma{
+  flex:1; padding:11px 0; font:600 13px/1 var(--sans); cursor:pointer;
+  border:1px solid var(--hairline); border-radius:3px; background:transparent; color:var(--tinta-sec);
+}
+.btn-fantasma:hover{ border-color:var(--tinta-sec); color:var(--tinta); }
+.btn-primario{
+  flex:1; padding:11px 0; font:600 13px/1 var(--sans); cursor:pointer;
+  border:1px solid var(--acento); border-radius:3px; background:var(--acento); color:var(--papel-elev);
+}
+.btn-primario:hover{ background:#19304E; border-color:#19304E; }
+
+@media (max-width:640px){
+  .chat-topo{ padding:6px 16px 2px; gap:2px 8px; flex-wrap:wrap; }
+  .chat-nav{ flex:1 1 100%; justify-content:space-between; gap:8px; }
+  /* alvos de toque: 44px de altura é o mínimo confortável no polegar */
+  .chat-nav a{ font-size:13px; padding:15px 6px; }
+  .btn-conta{ width:40px; height:40px; }
+  /* marca compacta na linha de cima */
+  .marca-mini-escudo{ width:18px; }
+  .marca-mini span{ font-size:11px; letter-spacing:.14em; }
+  .chat-coluna{ padding:0 14px; }
+  .composicao-interna{ padding:0; }
+  .balao-usuario{ max-width:92%; }
+  .chat-input{ font-size:16px; }
+}
+`

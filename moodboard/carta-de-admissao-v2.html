@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admitly · Moodboard v2 — Carta de Admissão</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --papel:        #F6F2EA;
+    --papel-elev:   #FCFAF5;
+    --tinta:        #191512;
+    --tinta-sec:    #5C554B;
+    --hairline:     #E2DACB;
+    --lacre:        #1A4D3A;
+    --dourado:      #B98A2F;
+    --vermelho:     #A6301F;
+    --serif: "Instrument Serif", Georgia, serif;
+    --sans:  "Instrument Sans", "Helvetica Neue", sans-serif;
+    --mono:  "IBM Plex Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-font-smoothing: antialiased; }
+
+  body {
+    background: var(--papel);
+    color: var(--tinta);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    opacity: .05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .folha { max-width: 1080px; margin: 0 auto; padding: 48px 32px 96px; }
+
+  .caps {
+    text-transform: uppercase;
+    letter-spacing: .16em;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .caps--sec { color: var(--tinta-sec); }
+  .mono { font-family: var(--mono); }
+  .secao { margin-top: 64px; }
+  .secao > header {
+    display: flex; align-items: baseline; gap: 14px;
+    border-top: 1px solid var(--tinta);
+    padding-top: 14px; margin-bottom: 28px;
+  }
+  .secao > header .num  { font-family: var(--mono); font-size: 12px; color: var(--dourado); }
+  .secao > header h2    { font-size: 13px; }
+  .secao > header .nota { margin-left: auto; font-family: var(--mono); font-size: 11.5px; color: var(--tinta-sec); }
+
+  /* ================= LOGO ================= */
+  .logo-famila { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 0; border: 1px solid var(--hairline); border-radius: 8px; overflow: hidden; background: var(--papel-elev); }
+  .logo-celula { padding: 40px 32px; display: flex; flex-direction: column; gap: 18px; justify-content: space-between; min-height: 240px; }
+  .logo-celula + .logo-celula { border-left: 1px solid var(--hairline); }
+  .logo-celula .rotulo { margin-top: auto; }
+
+  .logo {
+    display: inline-flex; align-items: baseline;
+    align-self: flex-start; /* dentro de flex-column, não estica: o traço segue o wordmark */
+    font: 400 56px/1 var(--serif);
+    letter-spacing: -.01em;
+    color: var(--tinta);
+    position: relative;
+    padding-bottom: 10px;
+  }
+  .logo em { font-style: italic; }
+  .logo .ponto { width: 7px; height: 7px; border-radius: 50%; background: var(--dourado); margin-left: 7px; }
+  .logo .traco-logo { position: absolute; left: 2px; bottom: 0; width: 88%; height: 7px; }
+  .logo--mono { color: var(--tinta); }
+  .logo--mono .ponto { background: var(--tinta); }
+
+  .logo-compacta {
+    display: inline-grid; place-items: center;
+    width: 84px; height: 84px;
+    background: var(--tinta); border-radius: 12px;
+    font: 400 44px/1 var(--serif);
+    color: var(--papel);
+  }
+  .logo-compacta .ponto { color: var(--dourado); }
+  .logo-mini { display: inline-grid; place-items: center; width: 40px; height: 40px; background: var(--papel); border: 1px solid var(--hairline); border-radius: 9px; font: 400 21px/1 var(--serif); color: var(--tinta); }
+  .logo-mini .ponto { color: var(--dourado); }
+  .linha-logos { display: flex; gap: 14px; align-items: center; }
+  .uso-logo { font-size: 12.5px; color: var(--tinta-sec); }
+
+  /* ================= O GESTO (traço de tinteiro) ================= */
+  .grifo { position: relative; white-space: nowrap; }
+  .grifo svg { position: absolute; left: -2%; bottom: -5px; width: 104%; height: 8px; overflow: visible; }
+  .traco-logo         { stroke: var(--dourado); }
+  .grifo--lacre svg   { stroke: var(--lacre); }
+  .grifo--dourado svg { stroke: var(--dourado); }
+  .grifo--vermelho svg{ stroke: var(--vermelho); }
+
+  .usos-gesto { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--hairline); border-radius: 8px; overflow: hidden; background: var(--papel-elev); }
+  .uso-gesto { padding: 32px 36px; }
+  .uso-gesto + .uso-gesto { border-left: 1px solid var(--hairline); }
+  .uso-gesto .exemplo { font: 400 30px/1.25 var(--serif); }
+  .uso-gesto .regra   { margin-top: 16px; font-size: 12.5px; color: var(--tinta-sec); max-width: 40ch; }
+  .usos-gesto + .usos-gesto { margin-top: 0; }
+  .fileira-gesto { border: 1px solid var(--hairline); border-top: 0; border-radius: 0 0 8px 8px; background: var(--papel-elev); padding: 26px 36px; }
+  .fileira-gesto .linha { display: flex; align-items: baseline; gap: 10px; font: 400 22px/1.4 var(--serif); }
+  .fileira-gesto .legenda { font: 400 11px var(--sans); text-transform: none; letter-spacing: 0; color: var(--tinta-sec); margin-top: 10px; }
+
+  /* ================= paleta ================= */
+  .paleta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 22px; }
+  .cor .bloco { height: 92px; border-radius: 4px; border: 1px solid var(--hairline); margin-bottom: 10px; }
+  .cor .hex { font-family: var(--mono); font-size: 12px; color: var(--tinta-sec); }
+  .cor .uso { font-size: 12.5px; color: var(--tinta-sec); margin-top: 2px; }
+
+  /* ================= tipografia ================= */
+  .tipo .amostra-display { font: 400 48px/1.08 var(--serif); letter-spacing: -.005em; max-width: 20ch; }
+  .tipo .amostra-display em { font-style: italic; }
+  .tipo .amostra-h2 { font: 400 28px/1.2 var(--serif); margin-top: 24px; }
+  .tipo .amostra-body { max-width: 62ch; margin-top: 22px; }
+  .tipo .amostra-mono { font-family: var(--mono); font-size: 13px; color: var(--tinta-sec); margin-top: 22px; padding-top: 12px; border-top: 1px solid var(--hairline); }
+  .tipo .escala { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 26px; }
+  .tipo .escala figure { border: 1px solid var(--hairline); border-radius: 4px; padding: 14px 18px; background: var(--papel-elev); }
+  .tipo .escala figcaption { margin-top: 8px; }
+
+  /* ================= componentes ================= */
+  .grade-comp { display: grid; grid-template-columns: 1fr 1fr; gap: 40px 48px; }
+  .comp h3 { margin-bottom: 16px; }
+  .linha-comp { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .comp .obs { font-size: 12.5px; color: var(--tinta-sec); margin-top: 14px; max-width: 44ch; }
+
+  .btn {
+    font: 600 15px/1 var(--sans);
+    border-radius: 3px;
+    padding: 13px 24px;
+    cursor: pointer;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+    letter-spacing: .01em;
+  }
+  .btn--primario { background: var(--tinta); color: var(--papel); border: 1px solid var(--tinta); }
+  .btn--primario:hover { background: #2A231E; border-color: #2A231E; }
+  .btn--primario:disabled { background: #DAD2C2; border-color: #DAD2C2; color: #8F8678; cursor: not-allowed; }
+  .btn--secundario { background: transparent; color: var(--tinta); border: 1px solid var(--hairline); }
+  .btn--secundario:hover { border-color: var(--tinta); }
+  .btn--link {
+    background: none; border: 0; cursor: pointer;
+    font: 600 15px/1 var(--sans); color: var(--lacre);
+    text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1.5px;
+    padding: 4px 2px;
+  }
+  .btn--link:hover { color: #123527; }
+
+  .status { display: flex; flex-direction: column; gap: 12px; }
+  .status .item { display: flex; align-items: center; gap: 12px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .dot--lacre    { background: var(--lacre);    box-shadow: 0 0 0 3px rgba(26,77,58,.14); }
+  .dot--dourado  { background: var(--dourado);  box-shadow: 0 0 0 3px rgba(185,138,47,.16); }
+  .dot--vermelho { background: var(--vermelho); box-shadow: 0 0 0 3px rgba(166,48,31,.14); }
+  .dot--tinta    { background: var(--tinta-sec); opacity: .45; }
+  .status .quando { font-family: var(--mono); font-size: 12.5px; color: var(--tinta-sec); margin-left: auto; }
+
+  .campo { display: flex; flex-direction: column; gap: 6px; }
+  .campo input {
+    border: 0; border-bottom: 1px solid var(--hairline);
+    background: transparent; border-radius: 0;
+    padding: 9px 2px; font: 400 15px var(--sans); color: var(--tinta);
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .campo input::placeholder { color: #B4AB9C; }
+  .campo input:focus { outline: none; border-bottom-color: var(--lacre); box-shadow: 0 1px 0 0 var(--lacre); }
+  .campos-demo { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 460px; }
+
+  /* ================= voz ================= */
+  .vozes { display: grid; gap: 0; border: 1px solid var(--hairline); border-radius: 8px; overflow: hidden; background: var(--papel-elev); }
+  .voz { padding: 30px 36px; display: flex; align-items: baseline; gap: 24px; }
+  .voz + .voz { border-top: 1px solid var(--hairline); }
+  .voz .num { font-family: var(--mono); font-size: 12px; color: var(--tinta-sec); flex: none; }
+  .voz .frase { font: 400 27px/1.25 var(--serif); }
+
+  /* ================= login 1:1 ================= */
+  .tela-login {
+    border: 1px solid var(--hairline); border-radius: 8px;
+    overflow: hidden; background: var(--papel-elev);
+    display: grid; grid-template-columns: 1.5fr 1fr;
+    min-height: 720px;
+  }
+  .tela-login .marca {
+    padding: 56px; display: flex; flex-direction: column; gap: 44px;
+    border-right: 1px solid var(--hairline);
+  }
+  .tela-login .marca .meio { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .tela-login .marca .logo { font-size: 26px; padding-bottom: 6px; }
+  .tela-login .marca .logo .ponto { width: 4px; height: 4px; margin-left: 5px; }
+  .tela-login h2 {
+    font: 400 clamp(36px, 3.8vw, 50px)/1.12 var(--serif);
+    letter-spacing: -.005em; max-width: 13ch;
+  }
+  .tela-login .sub { margin-top: 20px; color: var(--tinta-sec); max-width: 38ch; }
+  .tela-login .envelope { margin-top: 48px; font-family: var(--mono); font-size: 11.5px; color: var(--tinta-sec); letter-spacing: .08em; }
+  .tela-login .base { color: var(--tinta-sec); }
+
+  .tela-login .form { padding: 56px 48px; display: flex; flex-direction: column; gap: 26px; background: var(--papel); }
+  .tela-login .form h3 { font: 400 26px/1.2 var(--serif); }
+  .tela-login .form .btn--primario { width: 100%; }
+  .tela-login .form .links { display: flex; justify-content: space-between; align-items: center; }
+  .tela-login .form .nota-mono { font-family: var(--mono); font-size: 11.5px; color: var(--tinta-sec); margin-top: auto; padding-top: 18px; border-top: 1px solid var(--hairline); }
+
+  .rodape-mood { margin-top: 72px; border-top: 1px solid var(--tinta); padding-top: 18px; display: flex; gap: 20px; flex-wrap: wrap; align-items: baseline; }
+  .rodape-mood .prox { margin-left: auto; color: var(--tinta-sec); }
+
+  @media (max-width: 880px) {
+    .paleta { grid-template-columns: repeat(2, 1fr); }
+    .grade-comp { grid-template-columns: 1fr; }
+    .logo-famila { grid-template-columns: 1fr; }
+    .logo-celula + .logo-celula { border-left: 0; border-top: 1px solid var(--hairline); }
+    .usos-gesto { grid-template-columns: 1fr; }
+    .uso-gesto + .uso-gesto { border-left: 0; border-top: 1px solid var(--hairline); }
+    .tela-login { grid-template-columns: 1fr; }
+    .tela-login .marca { border-right: 0; border-bottom: 1px solid var(--hairline); }
+  }
+</style>
+</head>
+<body>
+
+<!-- filtro de tinta imperfeita, usado nos traços de caneta -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="tinta">
+    <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" result="ruido"/>
+    <feDisplacementMap in="SourceGraphic" in2="ruido" scale="1.4"/>
+  </filter>
+</svg>
+
+<!-- traço de tinteiro reutilizável -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="traco-tinteiro" viewBox="0 0 100 8" preserveAspectRatio="none">
+    <path d="M2 5.2 C 22 3.2, 46 6.4, 68 4.2 S 92 2.8, 98 3.6" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M8 6 C 30 4.8, 58 7, 92 5" stroke-width="1" fill="none" stroke-linecap="round" opacity=".55"/>
+  </symbol>
+</svg>
+
+<main class="folha">
+
+  <!-- ======== masthead ======== -->
+  <header>
+    <div class="linha" style="display:flex; gap:18px; flex-wrap:wrap; margin-bottom:26px">
+      <span class="caps caps--sec">Moodboard · v2 · 02 out 2026</span>
+      <span class="caps caps--sec" style="color:var(--dourado)">logotipo próprio + traço de tinteiro — carimbo aposentado</span>
+    </div>
+    <div class="logo" style="font-size:76px">
+      Admit<em>ly</em><span class="ponto"></span>
+      <svg class="traco-logo" viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)"><use href="#traco-tinteiro"/></svg>
+    </div>
+    <p style="color:var(--tinta-sec); max-width:58ch; margin-top:20px">
+      A metáfora continua: a carta que ainda vai chegar. Mas o gesto que assina a marca agora é
+      outro — o <span class="grifo grifo--dourado">traço de tinteiro<svg viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)"><use href="#traco-tinteiro"/></svg></span>:
+      a caneta que sublinha o que importa, em vez do carimbo que carimba.
+    </p>
+  </header>
+
+  <!-- ======== 01 · marca ======== -->
+  <section class="secao">
+    <header>
+      <span class="num">01</span><h2 class="caps">Marca</h2>
+      <span class="nota">wordmark serif + ponto final dourado + traço à mão</span>
+    </header>
+
+    <div class="logo-famila">
+      <div class="logo-celula">
+        <div class="logo">Admit<em>ly</em><span class="ponto"></span><svg class="traco-logo" viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)"><use href="#traco-tinteiro"/></svg></div>
+        <div>
+          <div class="caps">Primária</div>
+          <p class="uso-logo" style="margin-top:6px">Instrument Serif. O "ly" em itálico dá o movimento;
+          o ponto dourado fecha a frase — a carta termina em admissão. O traço é desenhado,
+          nunca fonte.</p>
+        </div>
+      </div>
+      <div class="logo-celula">
+        <div class="linha-logos">
+          <span class="logo-compacta">A<span class="ponto">.</span></span>
+          <span class="logo-mini">A<span class="ponto">.</span></span>
+        </div>
+        <div>
+          <div class="caps">Compacta</div>
+          <p class="uso-logo" style="margin-top:6px">"A." para favicon, avatar, app icon e
+          lugares apertados. Fundo tinta no produto, papel em docs.</p>
+        </div>
+      </div>
+      <div class="logo-celula">
+        <div class="logo logo--mono">Admit<em>ly</em><span class="ponto"></span></div>
+        <div>
+          <div class="caps">Monocromática</div>
+          <p class="uso-logo" style="margin-top:6px">Sem traço e sem dourado quando o contexto
+          é impresso, PDF ou parceria. A identidade nunca depende de cor para funcionar.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== 02 · paleta ======== -->
+  <section class="secao">
+    <header>
+      <span class="num">02</span><h2 class="caps">Paleta</h2>
+      <span class="nota">aprovada no v1 — intacta</span>
+    </header>
+    <div class="paleta">
+      <div class="cor"><div class="bloco" style="background:#F6F2EA"></div><div class="caps">Papel</div><div class="hex">#F6F2EA</div><div class="uso">fundo de tudo</div></div>
+      <div class="cor"><div class="bloco" style="background:#FCFAF5"></div><div class="caps">Papel elevado</div><div class="hex">#FCFAF5</div><div class="uso">superfícies sobre papel</div></div>
+      <div class="cor"><div class="bloco" style="background:#191512"></div><div class="caps">Tinta</div><div class="hex">#191512</div><div class="uso">texto + botão primário</div></div>
+      <div class="cor"><div class="bloco" style="background:#5C554B"></div><div class="caps">Tinta secundária</div><div class="hex">#5C554B</div><div class="uso">texto de apoio</div></div>
+      <div class="cor"><div class="bloco" style="background:#E2DACB"></div><div class="caps">Hairline</div><div class="hex">#E2DACB</div><div class="uso">toda divisória do produto</div></div>
+      <div class="cor"><div class="bloco" style="background:#1A4D3A"></div><div class="caps">Lacre</div><div class="hex">#1A4D3A</div><div class="uso">marca, links, foco</div></div>
+      <div class="cor"><div class="bloco" style="background:#B98A2F"></div><div class="caps">Dourado</div><div class="hex">#B98A2F</div><div class="uso">só: plano pago, compat. alta</div></div>
+      <div class="cor"><div class="bloco" style="background:#A6301F"></div><div class="caps">Vermelho-lacre</div><div class="hex">#A6301F</div><div class="uso">erro / prazo urgente</div></div>
+    </div>
+  </section>
+
+  <!-- ======== 03 · tipografia ======== -->
+  <section class="secao tipo">
+    <header>
+      <span class="num">03</span><h2 class="caps">Tipografia</h2>
+      <span class="nota">Fraunces aposentada → Instrument Serif (mesma família da Sans)</span>
+    </header>
+
+    <p class="amostra-display">Sua carta de <em>admissão</em> está a caminho.</p>
+    <p class="amostra-h2">Inscrições abertas até 14 de outubro</p>
+    <p class="amostra-body">
+      Instrument Serif é mais fina e mais rara que a Fraunces — lê como capa de revista, não
+      como template. E por dividir a casa com a Instrument Sans, o sistema inteiro respira a
+      mesma tipografia. A itálica dela é o sublinhado do papel.
+    </p>
+    <p class="amostra-mono">PRAZO 14 OUT 2026&nbsp;&nbsp;·&nbsp;&nbsp;CUSTO US$ 1.700&nbsp;&nbsp;·&nbsp;&nbsp;COMPATIBILIDADE ALTA&nbsp;&nbsp;·&nbsp;&nbsp;9º ANO → 12º</p>
+
+    <div class="escala">
+      <figure><span style="font:400 40px var(--serif)">Aa</span><figcaption class="caps caps--sec">Instrument Serif 40 — display</figcaption></figure>
+      <figure><span style="font:italic 400 26px var(--serif)">Aa</span><figcaption class="caps caps--sec">Serif itálica — ênfase</figcaption></figure>
+      <figure><span style="font:600 15px var(--sans)">Aa</span><figcaption class="caps caps--sec">Instrument Sans 15 — UI</figcaption></figure>
+      <figure><span style="font:500 15px var(--mono)">Aa</span><figcaption class="caps caps--sec">Plex Mono 13 — dados</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- ======== 04 · o gesto ======== -->
+  <section class="secao">
+    <header>
+      <span class="num">04</span><h2 class="caps">O gesto — traço de tinteiro</h2>
+      <span class="nota">o sistema que substitui o carimbo</span>
+    </header>
+
+    <div class="usos-gesto">
+      <div class="uso-gesto">
+        <p class="exemplo">Custo <span class="grifo grifo--dourado">US$ 1.700<svg viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)"><use href="#traco-tinteiro"/></svg></span> — com bolsa de até 100%.</p>
+        <p class="regra">Dourado grifa dinheiro e compatibilidade alta. Aparece no máximo
+        uma vez por tela — se tudo é grifado, nada é.</p>
+      </div>
+      <div class="uso-gesto">
+        <p class="exemplo">Prazo: <span class="grifo grifo--vermelho">3 dias<svg viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)"><use href="#traco-tinteiro"/></svg></span> para a primeira fase.</p>
+        <p class="regra">Vermelho-lacre só para urgência real (≤ 7 dias). Nunca decoração.</p>
+      </div>
+    </div>
+    <div class="fileira-gesto">
+      <p class="linha">O aluno que lê, escolhe e <span class="grifo grifo--lacre">aplica<svg viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)"><use href="#traco-tinteiro"/></svg></span> — tudo num só lugar.</p>
+      <p class="legenda">Lacre grifa a ação da marca em headlines. Em texto corrido, nunca.</p>
+    </div>
+  </section>
+
+  <!-- ======== 05 · componentes ======== -->
+  <section class="secao">
+    <header>
+      <span class="num">05</span><h2 class="caps">Componentes</h2>
+      <span class="nota">aprovados no v1 — intactos</span>
+    </header>
+
+    <div class="grade-comp">
+      <div class="comp">
+        <h3 class="caps caps--sec">Botões</h3>
+        <div class="linha-comp">
+          <button class="btn btn--primario">Entrar</button>
+          <button class="btn btn--secundario">Ver oportunidades</button>
+          <button class="btn btn--link">Criar conta</button>
+          <button class="btn btn--primario" disabled>Entrar</button>
+        </div>
+        <p class="obs">Retangular, raio 3px, sólido de tinta. Disabled é "tinta fraca", não cinza de sistema.</p>
+      </div>
+
+      <div class="comp">
+        <h3 class="caps caps--sec">Dot de status</h3>
+        <div class="status">
+          <div class="item"><span class="dot dot--lacre"></span><span>Inscrições abertas</span><span class="quando">14 OUT 2026</span></div>
+          <div class="item"><span class="dot dot--dourado"></span><span>Fecha em 14 dias</span><span class="quando">14 OUT 2026</span></div>
+          <div class="item"><span class="dot dot--vermelho"></span><span>Fecha amanhã</span><span class="quando">03 OUT 2026</span></div>
+          <div class="item"><span class="dot dot--tinta"></span><span>Encerrada</span><span class="quando">01 FEV 2026</span></div>
+        </div>
+        <p class="obs">8px, anel de 12%. Data sempre em Plex Mono tabular.</p>
+      </div>
+
+      <div class="comp">
+        <h3 class="caps caps--sec">Campo linha-de-formulário</h3>
+        <div class="campos-demo">
+          <div class="campo">
+            <label class="caps caps--sec" for="demo-email">Seu e-mail</label>
+            <input id="demo-email" type="email" placeholder="voce@exemplo.com">
+          </div>
+          <div class="campo">
+            <label class="caps caps--sec" for="demo-senha">Sua senha</label>
+            <input id="demo-senha" type="password" placeholder="••••••••">
+          </div>
+        </div>
+        <p class="obs">Sem caixa: só a linha. Foco sobe de hairline para lacre.</p>
+      </div>
+
+      <div class="comp">
+        <h3 class="caps caps--sec">Voz — títulos candidatos</h3>
+        <div class="vozes">
+          <div class="voz"><span class="num">a.</span><p class="frase">Sua carta de <em>admissão</em> está a caminho.</p></div>
+          <div class="voz"><span class="num">b.</span><p class="frase">A resposta vem depois. A estratégia começa agora.</p></div>
+          <div class="voz"><span class="num">c.</span><p class="frase">Menos sorte. <em>Mais plano.</em></p></div>
+          <div class="voz"><span class="num">d.</span><p class="frase">O prazo mais importante é o seu.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== 06 · login 1:1 ======== -->
+  <section class="secao">
+    <header>
+      <span class="num">06</span><h2 class="caps">Login 1:1</h2>
+      <span class="nota">carimbo fora — o gesto do traço + narrativa de envelope</span>
+    </header>
+
+    <div class="tela-login">
+      <div class="marca">
+        <div class="logo">Admit<em>ly</em><span class="ponto"></span><svg class="traco-logo" viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)"><use href="#traco-tinteiro"/></svg></div>
+        <div class="meio">
+          <h2>Sua carta de <span class="grifo grifo--dourado" style="font-style:italic">admissão<svg viewBox="0 0 100 8" preserveAspectRatio="none" filter="url(#tinta)"><use href="#traco-tinteiro"/></svg></span> está a caminho.</h2>
+          <p class="sub">Olimpíadas, pesquisas e programas de verão — com prazo, custo e
+          chance real, reunidos para o seu perfil.</p>
+          <p class="envelope">ENVELOPE Nº 001 · DESTINATÁRIO: VOCÊ · POSTAGEM: HOJE</p>
+        </div>
+        <p class="base caps caps--sec">Para estudantes brasileiros que olham para fora</p>
+      </div>
+
+      <form class="form" onsubmit="return false">
+        <span class="caps caps--sec">Acesso</span>
+        <h3>Entre na sua conta.</h3>
+        <div class="campo">
+          <label class="caps caps--sec" for="login-email">Seu e-mail</label>
+          <input id="login-email" type="email" placeholder="voce@exemplo.com">
+        </div>
+        <div class="campo">
+          <label class="caps caps--sec" for="login-senha">Sua senha</label>
+          <input id="login-senha" type="password" placeholder="••••••••">
+        </div>
+        <button class="btn btn--primario" type="submit">Entrar</button>
+        <div class="links">
+          <button class="btn btn--link" type="button">Criar conta</button>
+          <button class="btn btn--link" type="button">Esqueci a senha</button>
+        </div>
+        <p class="nota-mono">PLANO SÓ DEPOIS · SEM CARTÃO PARA ENTRAR</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ======== rodapé ======== -->
+  <footer class="rodape-mood">
+    <span class="caps">Comparar com o v1 guardado → moodboard/carta-de-admissao.html</span>
+    <span class="prox mono" style="font-size:11.5px">APROVADO → DESIGN SYSTEM + PILOTO /LOGIN</span>
+  </footer>
+
+</main>
+</body>
+</html>

@@ -1,26 +1,25 @@
 @import "tailwindcss";
 
+/* O Admitly é uma carta sobre papel: o tema é claro, sempre.
+   O create-next-app trazia aqui um bloco de "prefers-color-scheme: dark" que
+   virava a página preta em máquinas no modo escuro — não existe modo escuro
+   neste produto. As fontes do v3 entram por página; aqui só ficam a cor e a
+   fonte de base, para nenhuma tela aparecer branca enquanto carrega. */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f6f2ea;
+  --foreground: #191512;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Libre Caslon Text", Georgia, serif;
 }

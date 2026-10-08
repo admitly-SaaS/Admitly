@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admitly · Moodboard — Carta de Admissão</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --papel:        #F6F2EA;
+    --papel-elev:   #FCFAF5;
+    --tinta:        #191512;
+    --tinta-sec:    #5C554B;
+    --hairline:     #E2DACB;
+    --lacre:        #1A4D3A;
+    --dourado:      #B98A2F;
+    --vermelho:     #A6301F;
+    --serif: "Fraunces", Georgia, serif;
+    --sans:  "Instrument Sans", "Helvetica Neue", sans-serif;
+    --mono:  "IBM Plex Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-font-smoothing: antialiased; }
+
+  body {
+    background: var(--papel);
+    color: var(--tinta);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  /* grão de papel, quase imperceptível */
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    opacity: .05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .folha { max-width: 1080px; margin: 0 auto; padding: 48px 32px 96px; }
+
+  /* ------- utilitários do dossiê ------- */
+  .caps {
+    text-transform: uppercase;
+    letter-spacing: .16em;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .caps--sec { color: var(--tinta-sec); }
+  .mono { font-family: var(--mono); }
+  .hair { border: 0; border-top: 1px solid var(--hairline); }
+  .secao { margin-top: 64px; }
+  .secao > header {
+    display: flex; align-items: baseline; gap: 14px;
+    border-top: 1px solid var(--tinta);
+    padding-top: 14px; margin-bottom: 28px;
+  }
+  .secao > header .num  { font-family: var(--mono); font-size: 12px; color: var(--dourado); }
+  .secao > header h2    { font-size: 13px; }
+  .secao > header .nota { margin-left: auto; font-family: var(--mono); font-size: 11.5px; color: var(--tinta-sec); }
+
+  /* ------- masthead ------- */
+  .masthead { padding-top: 8px; }
+  .wordmark { font-weight: 700; font-size: 18px; letter-spacing: -.01em; }
+  .wordmark em { font-style: normal; color: var(--lacre); }
+  .masthead h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(44px, 7vw, 68px);
+    line-height: 1.04;
+    letter-spacing: -.015em;
+    margin: 18px 0 14px;
+    max-width: 14ch;
+  }
+  .masthead h1 em { font-style: italic; }
+  .masthead .linha { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 22px; }
+  .regras {
+    display: flex; flex-wrap: wrap; gap: 8px 22px;
+    padding: 12px 0;
+    border-top: 1px solid var(--hairline);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .regras .caps b { color: var(--vermelho); font-weight: 600; }
+
+  /* ------- paleta ------- */
+  .paleta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 22px; }
+  .cor .bloco {
+    height: 92px; border-radius: 4px;
+    border: 1px solid var(--hairline);
+    margin-bottom: 10px;
+  }
+  .cor .nome { }
+  .cor .hex { font-family: var(--mono); font-size: 12px; color: var(--tinta-sec); }
+  .cor .uso { font-size: 12.5px; color: var(--tinta-sec); margin-top: 2px; }
+
+  /* ------- tipografia ------- */
+  .tipo .amostra-display {
+    font-family: var(--serif); font-weight: 400;
+    font-size: 40px; line-height: 1.1; letter-spacing: -.01em;
+    max-width: 22ch;
+  }
+  .tipo .amostra-h2 { font-family: var(--serif); font-size: 26px; margin-top: 20px; }
+  .tipo .amostra-it { font-family: var(--serif); font-style: italic; font-size: 20px; color: var(--lacre); margin-top: 14px; }
+  .tipo .amostra-body { max-width: 62ch; margin-top: 22px; color: var(--tinta); }
+  .tipo .amostra-mono {
+    font-family: var(--mono); font-size: 13px; color: var(--tinta-sec);
+    margin-top: 22px; padding-top: 12px; border-top: 1px solid var(--hairline);
+  }
+  .tipo .escala { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 26px; }
+  .tipo .escala figure { border: 1px solid var(--hairline); border-radius: 4px; padding: 14px 18px; background: var(--papel-elev); }
+  .tipo .escala figcaption { margin-top: 8px; }
+
+  /* ------- componentes ------- */
+  .grade-comp { display: grid; grid-template-columns: 1fr 1fr; gap: 40px 48px; }
+  .comp h3 { margin-bottom: 16px; }
+  .linha-comp { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .comp .obs { font-size: 12.5px; color: var(--tinta-sec); margin-top: 14px; max-width: 44ch; }
+
+  .btn {
+    font: 600 15px/1 var(--sans);
+    border-radius: 3px;
+    padding: 13px 24px;
+    cursor: pointer;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+    letter-spacing: .01em;
+  }
+  .btn--primario { background: var(--tinta); color: var(--papel); border: 1px solid var(--tinta); }
+  .btn--primario:hover { background: #2A231E; border-color: #2A231E; }
+  .btn--primario:disabled { background: #DAD2C2; border-color: #DAD2C2; color: #8F8678; cursor: not-allowed; }
+  .btn--secundario { background: transparent; color: var(--tinta); border: 1px solid var(--hairline); }
+  .btn--secundario:hover { border-color: var(--tinta); }
+  .btn--link {
+    background: none; border: 0; cursor: pointer;
+    font: 600 15px/1 var(--sans); color: var(--lacre);
+    text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1.5px;
+    padding: 4px 2px;
+  }
+  .btn--link:hover { color: #123527; }
+
+  /* carimbo */
+  .carimbo {
+    display: inline-block; position: relative;
+    padding: 12px 22px;
+    border: 2.5px solid var(--lacre); border-radius: 7px;
+    color: var(--lacre);
+    font: 700 14px/1 var(--sans);
+    text-transform: uppercase; letter-spacing: .24em;
+    transform: rotate(-6deg);
+    filter: url(#tinta-imperfeita);
+    animation: carimbar .28s ease-out .35s both;
+  }
+  .carimbo::after {
+    content: ""; position: absolute; inset: 3.5px;
+    border: 1px solid currentColor; border-radius: 4px;
+  }
+  .carimbo--dourado { border-color: var(--dourado); color: var(--dourado); }
+  .carimbo--pequeno { padding: 8px 14px; font-size: 11px; letter-spacing: .2em; }
+  .carimbo--plano   { transform: rotate(-2deg); }
+  @keyframes carimbar {
+    from { transform: rotate(-6deg) scale(1.3); opacity: 0; }
+    60%  { opacity: .95; }
+    to   { transform: rotate(-6deg) scale(1);  opacity: .92; }
+  }
+
+  /* dots de status */
+  .status { display: flex; flex-direction: column; gap: 12px; }
+  .status .item { display: flex; align-items: center; gap: 12px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .dot--lacre    { background: var(--lacre);    box-shadow: 0 0 0 3px rgba(26,77,58,.14); }
+  .dot--dourado  { background: var(--dourado);  box-shadow: 0 0 0 3px rgba(185,138,47,.16); }
+  .dot--vermelho { background: var(--vermelho); box-shadow: 0 0 0 3px rgba(166,48,31,.14); }
+  .dot--tinta    { background: var(--tinta-sec); opacity: .45; box-shadow: none; }
+  .status .quando { font-family: var(--mono); font-size: 12.5px; color: var(--tinta-sec); margin-left: auto; }
+
+  /* campo linha-de-formulário */
+  .campo { display: flex; flex-direction: column; gap: 6px; }
+  .campo label { }
+  .campo input {
+    border: 0; border-bottom: 1px solid var(--hairline);
+    background: transparent; border-radius: 0;
+    padding: 9px 2px; font: 400 15px var(--sans); color: var(--tinta);
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .campo input::placeholder { color: #B4AB9C; }
+  .campo input:focus { outline: none; border-bottom-color: var(--lacre); box-shadow: 0 1px 0 0 var(--lacre); }
+  .campos-demo { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 460px; }
+
+  /* ------- login 1:1 ------- */
+  .tela-login {
+    border: 1px solid var(--hairline); border-radius: 8px;
+    overflow: hidden; background: var(--papel-elev);
+    display: grid; grid-template-columns: 1.5fr 1fr;
+    min-height: 720px;
+  }
+  .tela-login .marca {
+    padding: 56px; display: flex; flex-direction: column;
+    border-right: 1px solid var(--hairline);
+  }
+  .tela-login .marca .meio { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .tela-login h2 {
+    font-family: var(--serif); font-weight: 400;
+    font-size: clamp(34px, 3.6vw, 46px); line-height: 1.12; letter-spacing: -.01em;
+    max-width: 13ch;
+  }
+  .tela-login h2 em {
+    font-style: italic; color: var(--tinta);
+    border-bottom: 2px solid var(--dourado); padding-bottom: 2px;
+  }
+  .tela-login .sub { margin-top: 20px; color: var(--tinta-sec); max-width: 38ch; }
+  .tela-login .carimbo-login { margin-top: 44px; }
+  .tela-login .base { color: var(--tinta-sec); }
+
+  .tela-login .form { padding: 56px 48px; display: flex; flex-direction: column; gap: 26px; background: var(--papel); }
+  .tela-login .form h3 { font-family: var(--serif); font-weight: 400; font-size: 24px; }
+  .tela-login .form .btn--primario { width: 100%; }
+  .tela-login .form .links { display: flex; justify-content: space-between; align-items: center; }
+  .tela-login .form .nota-mono { font-family: var(--mono); font-size: 11.5px; color: var(--tinta-sec); margin-top: auto; padding-top: 18px; border-top: 1px solid var(--hairline); }
+
+  /* rodapé do moodboard */
+  .rodape-mood { margin-top: 72px; border-top: 1px solid var(--tinta); padding-top: 18px; display: flex; gap: 20px; flex-wrap: wrap; align-items: baseline; }
+  .rodape-mood .prox { margin-left: auto; color: var(--tinta-sec); }
+
+  @media (max-width: 880px) {
+    .paleta { grid-template-columns: repeat(2, 1fr); }
+    .grade-comp { grid-template-columns: 1fr; }
+    .tela-login { grid-template-columns: 1fr; }
+    .tela-login .marca { border-right: 0; border-bottom: 1px solid var(--hairline); }
+  }
+</style>
+</head>
+<body>
+
+<!-- filtro que dá tinta imperfeita ao carimbo -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="tinta-imperfeita">
+    <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" result="ruido"/>
+    <feDisplacementMap in="SourceGraphic" in2="ruido" scale="2.2"/>
+  </filter>
+</svg>
+
+<main class="folha">
+
+  <!-- ======== masthead ======== -->
+  <header class="masthead">
+    <div class="linha">
+      <span class="wordmark">Admit<em>ly</em></span>
+      <span class="caps caps--sec">Moodboard · Identidade visual · v1</span>
+      <span class="caps caps--sec mono" style="letter-spacing:.04em">02 OUT 2026</span>
+    </div>
+    <h1>Carta de <em>Admissão</em></h1>
+    <p class="sub" style="color:var(--tinta-sec); max-width:56ch">
+      A identidade inteira nasce de uma única metáfora: a carta de aceitação que ainda vai chegar.
+      Papel, tinta, lacre. Nada de gradiente, nada de brilho de dashboard.
+    </p>
+    <div class="regras caps caps--sec">
+      <span><b>✕</b> gradiente</span>
+      <span><b>✕</b> emoji como UI</span>
+      <span><b>✕</b> sombra difusa</span>
+      <span><b>✓</b> hairline vence sombra</span>
+      <span><b>✓</b> raio ≤ 6px</span>
+      <span><b>✓</b> um acento por tela</span>
+    </div>
+  </header>
+
+  <!-- ======== 01 · paleta ======== -->
+  <section class="secao">
+    <header>
+      <span class="num">01</span><h2 class="caps">Paleta</h2>
+      <span class="nota">4 neutros de papel + 3 acentos com função</span>
+    </header>
+    <div class="paleta">
+      <div class="cor"><div class="bloco" style="background:#F6F2EA"></div><div class="nome caps">Papel</div><div class="hex">#F6F2EA</div><div class="uso">fundo de tudo</div></div>
+      <div class="cor"><div class="bloco" style="background:#FCFAF5"></div><div class="nome caps">Papel elevado</div><div class="hex">#FCFAF5</div><div class="uso">superfícies sobre papel</div></div>
+      <div class="cor"><div class="bloco" style="background:#191512"></div><div class="nome caps">Tinta</div><div class="hex">#191512</div><div class="uso">texto + botão primário</div></div>
+      <div class="cor"><div class="bloco" style="background:#5C554B"></div><div class="nome caps">Tinta secundária</div><div class="hex">#5C554B</div><div class="uso">texto de apoio</div></div>
+      <div class="cor"><div class="bloco" style="background:#E2DACB"></div><div class="nome caps">Hairline</div><div class="hex">#E2DACB</div><div class="uso">toda divisória do produto</div></div>
+      <div class="cor"><div class="bloco" style="background:#1A4D3A"></div><div class="nome caps">Lacre</div><div class="hex">#1A4D3A</div><div class="uso">marca, links, foco, carimbo</div></div>
+      <div class="cor"><div class="bloco" style="background:#B98A2F"></div><div class="nome caps">Dourado</div><div class="hex">#B98A2F</div><div class="uso">só: plano pago, compat. alta</div></div>
+      <div class="cor"><div class="bloco" style="background:#A6301F"></div><div class="nome caps">Vermelho-lacre</div><div class="hex">#A6301F</div><div class="uso">erro / prazo urgente</div></div>
+    </div>
+  </section>
+
+  <!-- ======== 02 · tipografia ======== -->
+  <section class="secao tipo">
+    <header>
+      <span class="num">02</span><h2 class="caps">Tipografia</h2>
+      <span class="nota">Fraunces · Instrument Sans · IBM Plex Mono — nunca Inter/Geist</span>
+    </header>
+
+    <p class="amostra-display">Sua carta de admissão está a caminho.</p>
+    <p class="amostra-h2">Inscrições abertas até 14 de outubro</p>
+    <p class="amostra-it">“O melhor programa é o que você consegue pagar.”</p>
+    <p class="amostra-body">
+      Instrument Sans conduz a interface: 15px de corpo, hierarquia por peso e espaçamento —
+      nunca por cinza-genérico. Título grande, corpo quieto, dados em mono. A serifa aparece
+      onde há declaração; o sans aparece onde há trabalho.
+    </p>
+    <p class="amostra-mono">PRAZO 14 OUT 2026&nbsp;&nbsp;·&nbsp;&nbsp;CUSTO US$ 1.700&nbsp;&nbsp;·&nbsp;&nbsp;COMPATIBILIDADE ALTA&nbsp;&nbsp;·&nbsp;&nbsp;9º ANO → 12º</p>
+
+    <div class="escala">
+      <figure><span style="font-family:var(--serif); font-size:40px">Aa</span><figcaption class="caps caps--sec">Fraunces 40 — display</figcaption></figure>
+      <figure><span style="font-family:var(--serif); font-size:26px">Aa</span><figcaption class="caps caps--sec">Fraunces 26 — título</figcaption></figure>
+      <figure><span style="font:600 15px var(--sans)">Aa</span><figcaption class="caps caps--sec">Instrument 15 — UI</figcaption></figure>
+      <figure><span style="font:500 15px var(--mono)">Aa</span><figcaption class="caps caps--sec">Plex Mono 13 — dados</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- ======== 03 · componentes ======== -->
+  <section class="secao">
+    <header>
+      <span class="num">03</span><h2 class="caps">Componentes</h2>
+      <span class="nota">os 4 que rolam para o app inteiro</span>
+    </header>
+
+    <div class="grade-comp">
+      <div class="comp">
+        <h3 class="caps caps--sec">Botões</h3>
+        <div class="linha-comp">
+          <button class="btn btn--primario">Entrar</button>
+          <button class="btn btn--secundario">Ver oportunidades</button>
+          <button class="btn btn--link">Criar conta</button>
+          <button class="btn btn--primario" disabled>Entrar</button>
+        </div>
+        <p class="obs">Retangular, raio 3px, sólido de tinta. Primário = uma ação por tela.
+        Passe o mouse: muda em 150ms, sem bounce, sem sombra.</p>
+      </div>
+
+      <div class="comp">
+        <h3 class="caps caps--sec">Selo carimbo</h3>
+        <div class="linha-comp" style="gap:34px; padding: 18px 0 6px">
+          <span class="carimbo">Admitido</span>
+          <span class="carimbo carimbo--pequeno">Verificado</span>
+          <span class="carimbo carimbo--pequeno carimbo--dourado carimbo--plano">Compat. alta</span>
+        </div>
+        <p class="obs">Borda 2.5px + anel interno, tinta imperfeita via filtro de ruído.
+        Dourado só quando há dinheiro ou compatibilidade alta em jogo.</p>
+      </div>
+
+      <div class="comp">
+        <h3 class="caps caps--sec">Dot de status <span style="text-transform:none; letter-spacing:0; font-weight:400">— substitui ⚪🟡🔴</span></h3>
+        <div class="status">
+          <div class="item"><span class="dot dot--lacre"></span><span>Inscrições abertas</span><span class="quando">14 OUT 2026</span></div>
+          <div class="item"><span class="dot dot--dourado"></span><span>Fecha em 14 dias</span><span class="quando">14 OUT 2026</span></div>
+          <div class="item"><span class="dot dot--vermelho"></span><span>Fecha amanhã</span><span class="quando">03 OUT 2026</span></div>
+          <div class="item"><span class="dot dot--tinta"></span><span>Encerrada</span><span class="quando">01 FEV 2026</span></div>
+        </div>
+        <p class="obs">8px, anel de 12% de opacidade. A data vive em Plex Mono, sempre tabular.</p>
+      </div>
+
+      <div class="comp">
+        <h3 class="caps caps--sec">Campo linha-de-formulário</h3>
+        <div class="campos-demo">
+          <div class="campo">
+            <label class="caps caps--sec" for="demo-email">Seu e-mail</label>
+            <input id="demo-email" type="email" placeholder="voce@exemplo.com">
+          </div>
+          <div class="campo">
+            <label class="caps caps--sec" for="demo-senha">Sua senha</label>
+            <input id="demo-senha" type="password" placeholder="••••••••">
+          </div>
+        </div>
+        <p class="obs">Sem caixa, sem sombra: só a linha. Clique para ver o foco — a linha
+        sobe de hairline para lacre.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== 04 · login 1:1 ======== -->
+  <section class="secao">
+    <header>
+      <span class="num">04</span><h2 class="caps">Login 1:1</h2>
+      <span class="nota">piloto da identidade — sem card, o form vive na página</span>
+    </header>
+
+    <div class="tela-login">
+      <div class="marca">
+        <span class="wordmark">Admit<em>ly</em></span>
+        <div class="meio">
+          <h2>Sua carta de <em>admissão</em> está a caminho.</h2>
+          <p class="sub">Olimpíadas, pesquisas e programas de verão — com prazo, custo e
+          chance real, reunidos para o seu perfil.</p>
+          <div><span class="carimbo carimbo-login">Admitido</span></div>
+        </div>
+        <p class="base caps caps--sec">Para estudantes brasileiros que olham para fora</p>
+      </div>
+
+      <form class="form" onsubmit="return false">
+        <span class="caps caps--sec">Acesso</span>
+        <h3>Entre na sua conta.</h3>
+        <div class="campo">
+          <label class="caps caps--sec" for="login-email">Seu e-mail</label>
+          <input id="login-email" type="email" placeholder="voce@exemplo.com">
+        </div>
+        <div class="campo">
+          <label class="caps caps--sec" for="login-senha">Sua senha</label>
+          <input id="login-senha" type="password" placeholder="••••••••">
+        </div>
+        <button class="btn btn--primario" type="submit">Entrar</button>
+        <div class="links">
+          <button class="btn btn--link" type="button">Criar conta</button>
+          <button class="btn btn--link" type="button">Esqueci a senha</button>
+        </div>
+        <p class="nota-mono">PLANO SÓ DEPOIS · SEM CARTÃO PARA ENTRAR</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ======== rodapé ======== -->
+  <footer class="rodape-mood">
+    <span class="caps">Aprovado → design system + piloto /login no app</span>
+    <span class="prox mono" style="font-size:11.5px">DEPOIS: /OPORTUNIDADES → /CHAT → /ASSINAR</span>
+  </footer>
+
+</main>
+</body>
+</html>
