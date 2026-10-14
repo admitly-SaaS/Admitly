@@ -1,0 +1,24 @@
+
+> admitly@0.1.0 dev
+> next dev
+
+▲ Next.js 16.3.5 (Turbopack)
+- Local:         http://localhost:58119
+- Network:       http://26.13.218.170:58119
+- Environments: .env.local
+✓ Ready in 926ms
+⚠ Warning: Next.js ignored package-lock.json in C:\Users\tcaio because it is outside the current Git repository (C:\Users\tcaio\Documents\admitly).
+ To use this directory, set `turbopack.root` in your Next.js config.
+
+✓ Running next.config.ts took 82ms
+
+ GET /oportunidades 200 in 597ms (next.js: 314ms, application-code: 284ms)
+ GET /oportunidades 200 in 65ms (next.js: 6ms, application-code: 59ms)
+ GET /oportunidades 200 in 80ms (next.js: 8ms, application-code: 72ms)
+[browser] auth.getUser error AuthSessionMissingError: Auth session missing! (app/oportunidades/page.js:193:19)
+ GET /login 200 in 172ms (next.js: 49ms, application-code: 123ms)
+ GET /login 200 in 76ms (next.js: 8ms, application-code: 68ms)
+ GET /login 200 in 71ms (next.js: 6ms, application-code: 65ms)
+ GET /welcome 200 in 121ms (next.js: 45ms, application-code: 75ms)
+ GET /perfil 200 in 117ms (next.js: 46ms, application-code: 72ms)
+ GET /oportunidades 200 in 74ms (next.js: 9ms, application-code: 66ms)

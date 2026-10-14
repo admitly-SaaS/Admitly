@@ -1,0 +1,4 @@
+sink em :7391 (com CORS preflight)
+erro parse TypeError [ERR_INVALID_ARG_TYPE]: The "data" argument must be of type string or an instance of Buffer, TypedArray, or DataView. Received undefined
+erro parse SyntaxError: Unexpected token 'e', "eyJhbGciOi"... is not valid JSON
+jwt recebido, len 1383

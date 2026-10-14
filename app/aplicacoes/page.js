@@ -305,6 +305,8 @@ export default function Aplicacoes() {
         <nav className="apl-nav">
           <a href="/oportunidades">Oportunidades</a>
           <a href="/aplicacoes" className="ativo" aria-current="page">Aplicações</a>
+          <a href="/redacoes">Redações</a>
+          <a href="/extracurriculares">Extracurriculares</a>
           <a href="/perfil">Perfil</a>
           <div className="menu-conta">
             <button

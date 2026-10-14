@@ -81,11 +81,15 @@ function Grifo({ children }) {
   );
 }
 
-export default function OppCard({ opp, isFavorite, userId }) {
+export default function OppCard({ opp, isFavorite, userId, onFavoriteChange }) {
   const [ocupado, setOcupado] = useState(false);
   const [adicionado, setAdicionado] = useState(false);
-  const [salvo, setSalvo] = useState(isFavorite);
   const [aviso, setAviso] = useState(null);
+
+  // Único ponto de verdade para "este programa está salvo?" é o Set da página.
+  // Salvar aqui otimista: o cartão confia antes de confirmar — se o banco
+  // falhar, a página reverte pelo onFavoriteChange no catch.
+  const salvo = Boolean(isFavorite);
 
   const mostrar = (texto, tipo = 'ok') => {
     setAviso({ texto, tipo });
@@ -98,18 +102,24 @@ export default function OppCard({ opp, isFavorite, userId }) {
     e.stopPropagation();
     setOcupado(true);
     try {
+      const agoraSalvo = !salvo;
+      // Otimista: a página já é a fonte de verdade e é atualizada primeiro — o
+      // cartão re-renderiza na hora, e um Salvar no Radar reflete aqui
+      // automaticamente.
+      onFavoriteChange?.(opp.id, agoraSalvo);
+
       if (salvo) {
         const { error } = await removeFavoriteForUser(userId, opp.id, makeClient());
         if (error) throw error;
-        setSalvo(false);
         mostrar('Programa removido dos favoritos.');
       } else {
         const { error } = await addFavoriteForUser(userId, opp.id, makeClient());
         if (error) throw error;
-        setSalvo(true);
         mostrar('Programa salvo nos favoritos.');
       }
     } catch {
+      // falhou no banco: reverte a mudança otimista
+      onFavoriteChange?.(opp.id, salvo);
       mostrar('Não foi possível atualizar o favorito.', 'erro');
     } finally {
       setOcupado(false);

@@ -6,7 +6,11 @@ import { supabase } from '@/lib/supabase.js';
 import { calcularMatches, filterOpportunities } from '@/lib/matching.js';
 import { bateBusca } from '@/lib/busca.js';
 import { formatarData, diasAte, prazoStatus } from '@/lib/prazos.js';
+import { carregarSnapshot, salvarSnapshot, calcularRadar } from '@/lib/radar.js';
+import { listarDescartes } from '@/lib/radar-descartes.js';
+import { sincronizarFavoritos } from '@/lib/sync-favoritos.js';
 import OppCard from '../components/opp-card';
+import RadarCard from '../components/radar-card';
 
 // Catálogo no design v3: cartões-papel com letterhead de linha, prazo em mono
 // e o acento reservado para dinheiro (grifo do custo) e compatibilidade.
@@ -68,6 +72,8 @@ function Topo({ menuAberto, setMenuAberto, sair }) {
       <nav className="opps-nav">
         <a href="/oportunidades" className="ativo" aria-current="page">Oportunidades</a>
         <a href="/aplicacoes">Aplicações</a>
+        <a href="/redacoes">Redações</a>
+        <a href="/extracurriculares">Extracurriculares</a>
         <a href="/perfil">Perfil</a>
         <div className="menu-conta">
           <button
@@ -97,12 +103,72 @@ function Topo({ menuAberto, setMenuAberto, sair }) {
   );
 }
 
+// O Radar: "o que mudou desde a última vez que você abriu". Sem novidade,
+// sem aviso — o painel nem aparece (a não ser dobrado para reabrir).
+function Radar({ radar, radarAtivo, setRadarAtivo, userId, onResolvido, onFavoriteChange }) {
+  if (radar.primeiraVisita) {
+    return (
+      <section className="radar" aria-label="Radar de novidades">
+        <div className="radar-cabecalho">
+          <span className="caps-sec">Novidades para você</span>
+        </div>
+        <p className="radar-silencio mono-linha">
+          PRIMEIRA VISITA — DA PRÓXIMA VEZ ESTE ESPAÇO MOSTRA SÓ O QUE MUDOU.
+        </p>
+      </section>
+    );
+  }
+
+  if (radar.itens.length === 0) {
+    if (!radarAtivo) return null; // sem novidade, sem aviso
+    return (
+      <section className="radar" aria-label="Radar de novidades">
+        <div className="radar-cabecalho">
+          <span className="caps-sec">Novidades para você</span>
+          <button
+            type="button"
+            className="radar-fechar"
+            onClick={() => setRadarAtivo(false)}
+            aria-label="Fechar o radar"
+          >
+            ×
+          </button>
+        </div>
+        <p className="radar-silencio mono-linha">NADA MUDOU DESDE SUA ÚLTIMA VISITA.</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="radar" aria-label="Radar de novidades">
+      <div className="radar-cabecalho">
+        <span className="caps-sec">Novidades para você</span>
+        <span className="mono-linha">{radar.itens.length} DESDE SUA ÚLTIMA VISITA</span>
+      </div>
+      <div className="radar-lista">
+        {radar.itens.map((item) => (
+          <RadarCard
+            key={`${item.tipo}-${item.opp.id}`}
+            item={item}
+            userId={userId}
+            onResolvido={onResolvido}
+            onFavoriteChange={onFavoriteChange}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function Oportunidades() {
   const router = useRouter();
   const [usuario, setUsuario] = useState(null);
   const [perfil, setPerfil] = useState(null);
   const [opps, setOpps] = useState([]);
   const [favoritos, setFavoritos] = useState(new Set());
+  // Reações do Radar (radar_descartes de lib/radar-descartes.js): mapa
+  // opportunity_id → 'descartado' | 'feito'. Vazio até o load/devolver.
+  const [descartes, setDescartes] = useState(() => new Map());
   const [filtro, setFiltro] = useState('Todas');
   const [busca, setBusca] = useState('');
   const [ordenar, setOrdenar] = useState('compatibilidade');
@@ -110,6 +176,10 @@ export default function Oportunidades() {
   const [semSessao, setSemSessao] = useState(false);
   const [erro, setErro] = useState(null);
   const [menuAberto, setMenuAberto] = useState(false);
+  // Radar: snapshot da última visita, semeado no callback do load.
+  const [snapshot, setSnapshot] = useState(null);
+  const [resolvidos, setResolvidos] = useState(() => new Set());
+  const [radarAtivo, setRadarAtivo] = useState(true);
   const carregouRef = useRef(false);
 
   useEffect(() => {
@@ -149,8 +219,11 @@ export default function Oportunidades() {
         Promise.all([
           supabase.from('opportunities').select('*'),
           supabase.from('favorites').select('opportunity_id').eq('user_id', userData.id),
+          // Reações do Radar ("Não faz sentido" / "Já fiz"): degrada em vazio
+          // quando a migration do radar_descartes ainda não rodou.
+          listarDescartes(userData.id, supabase),
         ])
-          .then(([resOpps, resFav]) => {
+          .then(([resOpps, resFav, resDesc]) => {
             if (!ativo) return;
 
             // O perfil acadêmico é salvo no user_metadata pelo /perfil,
@@ -166,6 +239,11 @@ export default function Oportunidades() {
 
             setOpps(cruas);
             setFavoritos(new Set((resFav.data || []).map((f) => f.opportunity_id)));
+            setDescartes(resDesc.descartes || new Map());
+
+            // Radar: semeia o snapshot ANTES do primeiro render com dados, no
+            // mesmo callback do load (não no corpo de um effect).
+            setSnapshot(carregarSnapshot(window.localStorage));
 
             carregouRef.current = true;
             setCarregando(false);
@@ -198,14 +276,84 @@ export default function Oportunidades() {
   // (oportunidades, perfil), nessa ordem.
   const matcheados = useMemo(() => {
     if (!usuario || !opps.length) return [];
+    const comReacao = (opp) => ({
+      ...opp,
+      // reação persistida do Radar ('descartado'|'feito'|undefined): sinal
+      // vivo para o matching e para a ordenação da página.
+      descarte: descartes.get(String(opp.id)) || undefined,
+    });
     return perfil
-      ? calcularMatches(opps, perfil)
-      : opps.map((opp) => ({ ...opp, compatibility: null }));
-  }, [usuario, opps, perfil]);
+      ? calcularMatches(opps.map(comReacao), perfil)
+      : opps.map((o) => ({ ...comReacao(o), compatibility: null }));
+  }, [usuario, opps, perfil, descartes]);
 
   const sair = async () => {
     await supabase.auth.signOut();
     router.push('/login');
+  };
+
+  // ---- Radar: o que mudou desde a última visita ---------------------------
+  // O snapshot é lido UMA vez, no carregamento do acervo (callback async do
+  // load): as novidades ficam fixas enquanto a aba está aberta — resolver um
+  // cartão não muda o diff, é um boletim, não um borrador. O snapshot novo
+  // só é gravado ao sair da página, então a próxima visita compara contra
+  // ESTE momento.
+
+  // O diff é valor derivado de (matcheados, snapshot): useMemo, não effect.
+  const radar = useMemo(() => {
+    const bruto = calcularRadar(matcheados, snapshot, favoritos);
+    return { ...bruto, itens: bruto.itens.filter((item) => !resolvidos.has(item.opp.id)) };
+  }, [matcheados, snapshot, favoritos, resolvidos]);
+
+  useEffect(() => {
+    if (!opps.length) return undefined;
+    // grava o snapshot na saída: a próxima visita compara contra ESTE
+    // momento, já incluindo tudo que o usuário viu hoje.
+    const gravar = () => salvarSnapshot(window.localStorage, opps);
+    // pagehide cobre navegação real (<a href>) e fechamento de aba: o cleanup
+    // do React não roda de forma confiável durante o unload do documento.
+    window.addEventListener('pagehide', gravar);
+    return () => {
+      window.removeEventListener('pagehide', gravar);
+      // unmount SPA (navegação interna por router): grava aqui também.
+      gravar();
+    };
+  }, [opps]);
+
+  // Favorito mudou em qualquer cartão (Radar ou catálogo): a página é a fonte
+  // da verdade e todos os cartões acompanham o Set — sem recarregar.
+  const mudarFavorito = (opportunityId, agoraSalvo) => {
+    setFavoritos((atual) => {
+      const proximo = new Set(atual);
+      if (agoraSalvo) proximo.add(opportunityId);
+      else proximo.delete(opportunityId);
+      return proximo;
+    });
+  };
+
+  // Ref estável do callback: o canal do Realtime é inscrito UMA vez por
+  // sessão (evita re-subscrições por render) e lê o callback sempre fresco.
+  const refMudarFavorito = useRef(mudarFavorito);
+  useEffect(() => {
+    refMudarFavorito.current = mudarFavorito;
+  }, [mudarFavorito]);
+
+  // Sync de favoritos entre abas (Supabase Realtime, postgres_changes): uma
+  // aba nova/estreita injeta favoritos do banco direto no Set desta aba.
+  // O canal usa o filtro user_id=eq.<id> — só chega o que é do aluno (RLS é
+  // a barreira de verdade; o filtro só poupa rede). Sem realtime disponível
+  // a aba funciona como antes: nunca é dependência crítica.
+  useEffect(() => {
+    if (!usuario?.id) return undefined;
+    return sincronizarFavoritos(supabase, usuario.id, (id, salvo) => refMudarFavorito.current(id, salvo));
+  }, [usuario?.id]);
+
+  const resolverRadar = (item) => {
+    setResolvidos((atual) => {
+      const proximo = new Set(atual);
+      proximo.add(item.opp.id);
+      return proximo;
+    });
   };
 
   const acervo = useMemo(() => {
@@ -276,6 +424,15 @@ export default function Oportunidades() {
               {acervo.ultima && <span>ÚLTIMA VERIFICAÇÃO: {formatarData(acervo.ultima)}</span>}
             </p>
           </header>
+
+          <Radar
+            radar={radar}
+            radarAtivo={radarAtivo}
+            setRadarAtivo={setRadarAtivo}
+            userId={usuario.id}
+            onResolvido={resolverRadar}
+            onFavoriteChange={mudarFavorito}
+          />
 
           <div className="opps-controles">
             <div className="campo-busca">
@@ -389,6 +546,7 @@ export default function Oportunidades() {
                   opp={opp}
                   isFavorite={favoritos.has(opp.id)}
                   userId={usuario.id}
+                  onFavoriteChange={mudarFavorito}
                 />
               ))}
             </div>
@@ -507,6 +665,33 @@ const CSS = `
   margin-top:24px; padding-top:14px; border-top:1px solid var(--tinta);
   display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;
   font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; color:var(--tinta-sec);
+}
+
+/* ===== radar (o que mudou desde a última visita) ===== */
+.radar{ margin-top:30px; padding:20px 22px 18px;
+  background:var(--papel-elev); border:1px solid var(--hairline); border-radius:6px; }
+.radar-cabecalho{ display:flex; align-items:baseline; justify-content:space-between; gap:14px;
+  padding-bottom:12px; border-bottom:1px solid var(--tinta); }
+.radar-fechar{ flex:none; width:24px; height:24px; display:grid; place-items:center;
+  border:1px solid var(--hairline); border-radius:50%; background:transparent;
+  color:var(--tinta-sec); cursor:pointer; font:400 14px/1 var(--sans); }
+.radar-fechar:hover{ border-color:var(--tinta-sec); color:var(--tinta); }
+.radar-silencio{ padding:14px 0 2px; }
+.radar-lista{ margin-top:16px; display:flex; flex-direction:column; gap:14px; }
+.radar-cartao{ padding:18px 20px 16px; background:var(--papel);
+  border:1px solid var(--hairline); border-radius:4px; }
+.radar-cartao .cartao-nome{ margin-top:10px; font-size:23px; }
+.radar-rotulo{ font-family:var(--mono); font-size:10.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--lacre); }
+.radar-rotulo--prazo{ color:var(--vermelho); }
+.radar-porque{ margin-top:8px; font-size:14.5px; line-height:1.65; color:var(--tinta-sec); max-width:56ch; }
+.radar-porque em{ font-family:var(--corpo); font-style:italic; color:var(--tinta); }
+.radar-acoes{ margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; }
+.radar-btn{ padding:9px 14px; font-size:12.5px; }
+.radar-btn.salvo{ border-color:var(--lacre); color:var(--lacre); }
+@media (max-width:640px){
+  .radar{ padding:16px 14px 14px; }
+  .radar-btn{ padding:12px 16px; font-size:13.5px; }
 }
 
 /* ===== controles ===== */

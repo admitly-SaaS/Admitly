@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { calcularMatches } from '../../../lib/matching'
 import { prazoStatus, diasAte } from '../../../lib/prazos'
 import { temAssinaturaAtiva } from '../../../lib/subscriptions'
+import { sugestoesRedacaoDaMensagem } from '../../../lib/redacoes'
 
 // ===== Prompt do sistema =====
 // Regras de ORAÇÕES FALSAS primeiro (saudação, tarefa espontânea) porque são o
@@ -29,6 +30,7 @@ Se o Perfil do aluno abaixo já traz respostas, pule esses tópicos — a entrev
 - Oportunidades listadas no contexto ("Oportunidades mais compatíveis") são verificadas e são suas melhores cartas: cite-as pelo nome quando responderem à pergunta do aluno, com prazo e custo. Não recomende oportunidades que não estejam aí nem na conversa.
 
 ## Ferramentas proativas
+- Redação: quando o aluno falar de uma candidatura que pede redação e ainda não tiver o texto, lembre que ele pode começar o rascunho na aba Redações.
 - Cronograma: calibre pelo ano escolar — 1º ano: construção de base, sem pressa; 2º ano: quando começar exames e pesquisa de bolsas; 3º ano/formado: urgente, ações críticas primeiro, direto sem gerar pânico.
 - Simulador de competitividade: estimativa honesta com base em notas e atividades — pontos fortes, o que falta, sem prometer aprovação.
 - Carta de motivação: rascunho de partida a partir do que o aluno contou; nunca a versão final.
@@ -205,7 +207,13 @@ export async function POST(request) {
 
   const { data: aplicacoes } = await supabase
     .from('applications')
-    .select('university, status, deadline')
+    .select('id, university, status, deadline, details')
+    .eq('user_id', user.id)
+
+  // Ensaios servem para NÃO sugerir rascunho de candidatura que já tem redação.
+  const { data: ensaios } = await supabase
+    .from('essays')
+    .select('application_id')
     .eq('user_id', user.id)
 
   const { data: tarefas } = await supabase
@@ -224,6 +232,16 @@ export async function POST(request) {
   const matches = priorizarPorPrazo(
     calcularMatches(oportunidades || [], adaptarPerfil(perfilAcademico))
   ).slice(0, 6)
+
+
+  // Quando a mensagem cita uma candidatura que pede redação e ainda sem rascunho,
+  // a resposta do chat ganha, no fim, linhas "SUGESTÃO_REDAÇÃO: id | universidade"
+  // que a página do chat transforma em chip de 1 clique para /redacoes.
+  const sugestoesRedacao = sugestoesRedacaoDaMensagem(
+    mensagem,
+    aplicacoes || [],
+    ensaios || []
+  ).slice(0, 3)
 
   const promptComContexto = PROMPT_SISTEMA + montarContexto(perfilAcademico, aplicacoes, tarefas, matches)
 
@@ -253,6 +271,12 @@ export async function POST(request) {
         for await (const chunk of result.stream) {
           const texto = chunk.text()
           if (texto) controller.enqueue(new TextEncoder().encode(texto))
+        }
+        if (sugestoesRedacao.length > 0) {
+          const linhas = sugestoesRedacao
+            .map((s) => `\nSUGESTÃO_REDAÇÃO: ${s.id} | ${s.university}`)
+            .join('')
+          controller.enqueue(new TextEncoder().encode(linhas))
         }
       } catch (err) {
         console.error('stream do gemini interrompido:', err?.message || err)

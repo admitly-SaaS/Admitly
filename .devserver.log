@@ -1,0 +1,81 @@
+
+> admitly@0.1.0 dev
+> next dev -p 3457
+
+▲ Next.js 16.3.5 (Turbopack)
+- Local:         http://localhost:3457
+- Network:       http://26.13.218.170:3457
+- Environments: .env.local
+✓ Ready in 454ms
+⚠ Warning: Next.js ignored package-lock.json in C:\Users\tcaio because it is outside the current Git repository (C:\Users\tcaio\Documents\admitly).
+ To use this directory, set `turbopack.root` in your Next.js config.
+
+✓ Running next.config.ts took 42ms
+[cron] agendador interno ativo (tick 60s)
+
+ GET /chat 200 in 907ms (next.js: 645ms, application-code: 262ms)
+ GET /redacoes 200 in 905ms (next.js: 676ms, application-code: 228ms)
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] digest bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache
+[cron] alerta bloqueado: falha ao ler cron_runs (tabela aplicada no painel?): Could not find the table 'public.cron_runs' in the schema cache

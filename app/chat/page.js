@@ -4,6 +4,8 @@ import { useState, useEffect, useReducer, useRef, useSyncExternalStore } from 'r
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 import { temAssinaturaAtiva } from '../../lib/subscriptions.js'
+import { criarEnsaioParaUsuario } from '../../lib/redacoes.js'
+import { gerarMissoes } from '../../lib/atividade.js'
 
 const PASSOS_ONBOARDING = [
   {
@@ -20,8 +22,9 @@ const PASSOS_ONBOARDING = [
   },
 ]
 
-// Chips clicáveis: linhas "TAREFA: ..." e "UNIVERSIDADE: ..." viram ações.
-function renderizarMensagem(texto, aoAdicionarTarefa, aoAdicionarUniversidade) {
+// Chips clicáveis: linhas "TAREFA: ...", "UNIVERSIDADE: ..." e
+// "SUGESTÃO_REDAÇÃO: id | Nome" (gerada pelo /api/chat) viram ações.
+function renderizarMensagem(texto, aoAdicionarTarefa, aoAdicionarUniversidade, aoCriarRascunho, rascunhosCriados) {
   const linhas = texto.split('\n')
   return linhas.map((linha, i) => {
     if (linha.startsWith('TAREFA: ')) {
@@ -31,6 +34,23 @@ function renderizarMensagem(texto, aoAdicionarTarefa, aoAdicionarUniversidade) {
           <span>{tarefaTexto}</span>
           <button type="button" className="chip-btn" onClick={() => aoAdicionarTarefa(tarefaTexto)}>
             + Adicionar
+          </button>
+        </div>
+      )
+    }
+    if (linha.startsWith('SUGESTÃO_REDAÇÃO: ')) {
+      const [id, nome] = linha.replace('SUGESTÃO_REDAÇÃO: ', '').split(' | ')
+      const criado = rascunhosCriados.includes(id)
+      return (
+        <div key={i} className="chip-linha chip-linha--redacao">
+          <span className="chip-univ-nome">Redação de {nome}</span>
+          <button
+            type="button"
+            className="chip-btn chip-btn--primario"
+            disabled={criado}
+            onClick={() => aoCriarRascunho(id, nome)}
+          >
+            {criado ? 'Rascunho criado' : '+ Criar rascunho'}
           </button>
         </div>
       )
@@ -71,6 +91,8 @@ export default function Chat() {
   const [aviso, setAviso] = useState('')
   const [menuAberto, setMenuAberto] = useState(false)
   const [passoAtual, setPassoAtual] = useState(0)
+  const [rascunhosCriados, setRascunhosCriados] = useState([])
+  const [missoes, setMissoes] = useState([])
   const fimDasMensagens = useRef(null)
 
   useEffect(() => {
@@ -95,6 +117,22 @@ export default function Chat() {
         return
       }
       setUserId(user.id)
+
+      // Plano da semana para a abertura da conversa: a MESMA lib do perfil
+      // decide o que vale fazer agora — o chat só apresenta e aponta.
+      const [aps, tks, ens, ats] = (
+        await Promise.all([
+          supabase.from('applications').select('id, university, status, deadline').eq('user_id', user.id),
+          supabase.from('tasks').select('id, application_id, done').eq('user_id', user.id),
+          supabase.from('essays').select('id, title, status').eq('user_id', user.id),
+          supabase.from('extracurriculares').select('id, nome, status').eq('user_id', user.id).then(
+            (r) => r,
+            () => ({ data: [] }) // aba pode ainda não estar migrada; degrada sem quebrar
+          ),
+        ])
+      ).map((r) => r.data || [])
+
+      setMissoes(gerarMissoes({ formulario: user.user_metadata?.perfil_academico || {}, aplicacoes: aps, tarefas: tks, ensaios: ens, atividades: ats }))
 
       const ativa = await temAssinaturaAtiva(supabase, user.id)
 
@@ -179,6 +217,35 @@ export default function Chat() {
     } else {
       await supabase.from('applications').insert({ user_id: userId, university: nome })
       setAviso(`${nome} adicionada às suas aplicações`)
+    }
+    setTimeout(() => setAviso(''), 2500)
+  }
+
+  // Botão do chip "SUGESTÃO_REDAÇÃO": cria o rascunho já vinculado à candidatura.
+  // Antes checa se já não existe (ex.: clicou antes de recarregar a página) —
+  // a linha fica gravada na conversa, e o botão volta por ela após o reload.
+  const criarRascunhoRedacao = async (applicationId, nome) => {
+    if (!userId || rascunhosCriados.includes(applicationId)) return
+    const { data: existente } = await supabase
+      .from('essays')
+      .select('id')
+      .eq('application_id', applicationId)
+      .maybeSingle()
+    if (existente) {
+      setRascunhosCriados((prev) => [...prev, applicationId])
+      setAviso(`Já existe um rascunho de ${nome} na aba Redações`)
+    } else {
+      const { error } = await criarEnsaioParaUsuario(userId, {
+        title: `Redação de ${nome}`,
+        application_id: applicationId,
+        status: 'ideia',
+      }, supabase)
+      if (error) {
+        setAviso('Não foi possível criar o rascunho agora.')
+      } else {
+        setRascunhosCriados((prev) => [...prev, applicationId])
+        setAviso(`Rascunho de ${nome} criado — veja na aba Redações`)
+      }
     }
     setTimeout(() => setAviso(''), 2500)
   }
@@ -326,6 +393,8 @@ export default function Chat() {
         <nav className="chat-nav">
           <a href="/oportunidades">Oportunidades</a>
           <a href="/aplicacoes">Aplicações</a>
+          <a href="/redacoes">Redações</a>
+          <a href="/extracurriculares">Extracurriculares</a>
           <a href="/perfil">Perfil</a>
           <div className="menu-conta">
             <button
@@ -366,6 +435,22 @@ export default function Chat() {
               <p className="chat-vazio-sub">
                 Conte o que você procura — ou pergunte o que quiser saber sobre intercâmbios, universidades e candidaturas.
               </p>
+
+              {missoes.length > 0 && (
+                <div className="chat-missoes" aria-label="Plano da semana">
+                  <p className="caps-sec">Ou comece por aqui — seu plano desta semana</p>
+                  <ul>
+                    {missoes.map((m) => (
+                      <li key={m.id}>
+                        <a href={m.href}>
+                          <span className="misso-titulo">{m.titulo}</span>
+                          <span className="misso-detalhe">{m.detalhe}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
 
@@ -376,7 +461,7 @@ export default function Chat() {
                 <div className="balao-usuario">{msg.texto}</div>
               ) : (
                 <div className="corpo-admitly">
-                  {renderizarMensagem(msg.texto, adicionarTarefa, adicionarUniversidade)}
+                  {renderizarMensagem(msg.texto, adicionarTarefa, adicionarUniversidade, criarRascunhoRedacao, rascunhosCriados)}
                 </div>
               )}
             </div>
@@ -493,8 +578,18 @@ const CSS = `
 
 .chat-vazio{ padding:36px 0 44px; }
 .chat-vazio h2{ font:400 38px/1.15 var(--serif); letter-spacing:-.005em; margin-top:10px; }
-.chat-vazio h2 em{ font-style:italic; }
-.chat-vazio-sub{ margin-top:12px; font-size:16px; line-height:1.7; color:var(--tinta-sec); max-width:48ch; }
+.chat-vazio h2 em{ font-style:italic; }  .chat-vazio-sub{ margin-top:12px; font-size:16px; line-height:1.7; color:var(--tinta-sec); max-width:48ch; }
+
+  /* ===== plano da semana na abertura (mesma lib do perfil) ===== */
+  .chat-missoes{ margin-top:30px; text-align:left; background:var(--papel-elev); border:1px solid var(--hairline); border-radius:8px; padding:22px 26px 18px; }
+  .chat-missoes ul{ list-style:none; margin:10px 0 0; padding:0; }
+  .chat-missoes li{ border-top:1px solid var(--hairline); }
+  .chat-missoes li:first-child{ border-top:0; }
+  .chat-missoes a{ display:block; padding:10px 2px; text-decoration:none; color:inherit; border-radius:4px; }
+  .chat-missoes a:hover{ background:rgba(31,58,95,.05); }
+  .chat-missoes .misso-titulo{ display:block; font:400 18px/1.35 var(--serif); color:var(--tinta); }
+  .chat-missoes .misso-titulo::after{ content:' →'; color:var(--acento); font-family:var(--sans); font-size:15px; }
+  .chat-missoes .misso-detalhe{ display:block; margin-top:2px; font:400 13px/1.55 var(--sans); color:var(--tinta-sec); }
 
 .mensagem{ margin-bottom:26px; display:flex; flex-direction:column; }
 .mensagem--usuario{ align-items:flex-end; }
@@ -513,6 +608,10 @@ const CSS = `
   background:var(--papel-elev); padding:9px 12px; margin:8px 0; font-size:14.5px;
 }
 .chip-linha--univ{ border-left-color:var(--lacre); }
+.chip-linha--redacao{ border-left-color:var(--lacre); }
+.chip-btn--primario{ border-color:var(--lacre); color:var(--lacre); }
+.chip-btn--primario:not(:disabled):hover{ background:var(--lacre); color:var(--papel-elev); }
+.chip-btn:disabled{ border-color:var(--hairline); color:var(--tinta-sec); cursor:default; opacity:.7; }
 .chip-univ-nome{ font-weight:700; }
 .chip-btn{
   flex:none; font:600 12px/1 var(--sans); padding:6px 11px; border-radius:3px; cursor:pointer;

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
+import { listarAtividades, resumoParaPerfil } from '../../lib/extracurriculares.js'
+import { calcularStreak, linhaStreak, prontidao as calcularProntidao, gerarMissoes, proximoPrazo } from '../../lib/atividade.js'
 
 // Chaves e valores dos campos são os MESMOS de sempre:
 // o chat e as recomendações leem user_metadata.perfil_academico — não renomear.
@@ -28,6 +30,40 @@ export default function Perfil() {
   const [mensagem, setMensagem] = useState('')
   const [msgBoa, setMsgBoa] = useState(false)
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState('')
+  const [atividadesResumo, setAtividadesResumo] = useState('')
+  const [semana, setSemana] = useState(null)
+
+  // ===== Sua semana: coleta de dados para as três métricas ================
+  async function montarSemana(user, perfilSalvo, atividades) {
+    // Coleta com o client de RLS (anon): só o que é do próprio usuário.
+    const [aplicacoes, tarefas, ensaios] = (
+      await Promise.all([
+        supabase.from('applications').select('id, university, status, deadline, created_at').eq('user_id', user.id),
+        supabase.from('tasks').select('id, application_id, done, created_at').eq('user_id', user.id),
+        supabase.from('essays').select('id, title, status, updated_at').eq('user_id', user.id).then(
+          (r) => r,
+          () => ({ data: [] })
+        ),
+      ])
+    ).map((r) => r.data || [])
+
+    const dados = { formulario: perfilSalvo, aplicacoes, tarefas, ensaios, atividades }
+
+    const acoes = [
+      ...aplicacoes.map((ap) => ap.created_at),
+      ...tarefas.map((t) => t.created_at),
+      ...ensaios.map((e) => e.updated_at),
+      ...atividades.map((a) => a.updated_at),
+      perfilSalvo?.atualizado_em,
+    ].filter(Boolean)
+
+    setSemana({
+      missoes: gerarMissoes(dados),
+      prontidao: calcularProntidao(dados),
+      streak: calcularStreak(acoes),
+      prazo: proximoPrazo(aplicacoes),
+    })
+  }
 
   useEffect(() => {
     const carregarPerfil = async () => {
@@ -44,6 +80,12 @@ export default function Perfil() {
           setUltimaAtualizacao(new Date(salvo.atualizado_em).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }))
         } catch { /* ignore */ }
       }
+      // resumo da lista detalhada: se o aluno mantém atividades na aba
+      // Extracurriculares, ofereço preencher o campo de uma vez
+      const ats = await listarAtividades(user.id, supabase)
+      const atividades = ats?.data || []
+      setAtividadesResumo(resumoParaPerfil(atividades))
+      montarSemana(user, salvo, atividades)
       setCarregando(false)
     }
 
@@ -120,6 +162,68 @@ export default function Perfil() {
             Essas informações ajudam o Admitly a adaptar recomendações, prazos e universidades ao seu momento. Preencha com calma — quanto melhor você se conta, melhores ficam as indicações.
           </p>
         </header>
+
+        {/* ===== Sua semana: plano + prontidão + streak ===== */}
+          {semana && (
+            <section className="semana-cartao" aria-label="Sua semana atual">
+              <div className="semana-topo">
+                <span className="caps-sec">Sua semana</span>
+                <span className="semana-streak" title={linhaStreak(semana.streak)}>
+                  <i className={semana.streak.emRisco ? 'dot dot--dourado' : 'dot dot--lacre'} aria-hidden="true" />
+                  {semana.streak.semanas > 0 ? `${semana.streak.semanas} SEMANA${semana.streak.semanas === 1 ? '' : 'S'}` : 'PRIMEIRA SEMANA'}
+                </span>
+              </div>
+
+              <ol className="semana-missoes">
+                {semana.missoes.length > 0 ? (
+                  semana.missoes.map((m) => (
+                    <li key={m.id}>
+                      <a href={m.href}>
+                        <span className="misso-titulo">{m.titulo}</span>
+                        <span className="misso-detalhe">{m.detalhe}</span>
+                      </a>
+                    </li>
+                  ))
+                ) : (
+                  <li className="misso-limpo">
+                    <span className="misso-detalhe">Sem nada pendente esta semana — parabéns, raro e bom.</span>
+                  </li>
+                )}
+              </ol>
+
+              <div className="semana-prontidao">
+                <span className="prontidao-escrita">PRONTIDÃO DA CANDIDATURA</span>
+                <div
+                  className="prontidao-barra"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={semana.prontidao.score}
+                >
+                  <span className="prontidao-recheio" style={{ width: `${Math.min(100, Math.max(0, semana.prontidao.score))}%` }} />
+                </div>
+                <span className="prontidao-nota">{semana.prontidao.score}%</span>
+              </div>
+              <ul className="semana-componentes">
+                {semana.prontidao.componentes.map((c) => (
+                  <li key={c.chave}>
+                    <span className="comp-nome">{c.rotulo}</span>
+                    <span className="comp-nota" title={c.nota}>{c.nota}</span>
+                    <span className="comp-pontos">{c.ganho}/{c.maximo}</span>
+                  </li>
+                ))
+                }
+              </ul>
+
+              {semana.prazo && (
+                <p className="semana-prazo">
+                  Próximo prazo: <strong>{semana.prazo.nome}</strong> —{' '}
+                  {semana.prazo.dias === 0 ? 'fecha hoje' : semana.prazo.dias === 1 ? 'fecha amanhã' : `fecha em ${semana.prazo.dias} dias`}{' '}
+                  ({semana.prazo.data}).
+                </p>
+              )}
+            </section>
+          )}
 
         <form className="perfil-form" onSubmit={salvarPerfil}>
           <span className="caps-sec">Seu momento</span>
@@ -229,6 +333,19 @@ export default function Perfil() {
               value={formulario.atividades}
               onChange={(event) => atualizarCampo('atividades', event.target.value)}
             />
+            <p className="dica-campo">
+              Dica: detalhe cada atividade com números e papéis na{' '}
+              <a href="/extracurriculares">aba Extracurriculares</a> — o resumo da lista
+              pode ser colado aqui de uma vez (deixo no botão abaixo).
+            </p>
+            <button
+              type="button"
+              className="btn-link btn-link--discreto"
+              hidden={atividadesResumo === ''}
+              onClick={() => atualizarCampo('atividades', atividadesResumo)}
+            >
+              Preencher pela lista detalhada
+            </button>
           </div>
 
           <div className="campo">
@@ -299,11 +416,51 @@ const CSS = `
 .btn-link{
   font:600 13px/1 var(--sans); color:var(--acento);
   text-decoration:underline; text-underline-offset:4px; text-decoration-thickness:1.5px;
+  background:none; border:0; cursor:pointer; padding:0; text-align:left;
 }
 .btn-link:hover{ color:#19304E; }
+.dica-campo{ font-size:13px; line-height:1.6; color:var(--tinta-sec); }
+.dica-campo a{ color:var(--acento); font-weight:600; text-decoration:underline; text-underline-offset:3px; }
 
 /* ===== folha ===== */
 .perfil-folha{ max-width:680px; margin:0 auto; padding:44px 24px 72px; }
+
+/* ===== Sua semana: plano + prontidão + streak ===== */
+.semana-cartao{
+  margin-top:32px; background:var(--papel-elev); border:1px solid var(--hairline); border-radius:8px;
+  padding:30px 34px 26px;
+}
+.semana-topo{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.semana-streak{
+  display:inline-flex; align-items:center; gap:8px;
+  font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:var(--tinta-sec);
+}
+.semana-missoes{ list-style:none; margin:18px 0 0; padding:0; }
+.semana-missoes li{ border-top:1px solid var(--hairline); }
+.semana-missoes li:first-child{ border-top:0; }
+.semana-missoes a{ display:block; padding:12px 2px; text-decoration:none; color:inherit; border-radius:4px; }
+.semana-missoes a:hover{ background:rgba(31,58,95,.05); }
+.misso-titulo{ display:block; font:400 20px/1.35 var(--serif); color:var(--tinta); }
+.misso-titulo::after{ content:' →'; color:var(--acento); font-family:var(--sans); font-size:16px; }
+.misso-detalhe{ display:block; margin-top:2px; font:400 13.5px/1.55 var(--sans); color:var(--tinta-sec); }
+.misso-limpo{ padding:12px 2px; }
+.semana-prontidao{ margin-top:24px; padding-top:20px; border-top:1px solid var(--hairline); display:grid;
+  grid-template-columns:auto 1fr auto; align-items:center; gap:14px; }
+.prontidao-escrita, .prontidao-nota{ font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:var(--tinta-sec); }
+.prontidao-nota{ color:var(--acento); font-weight:600; }
+.prontidao-barra{ height:6px; background:var(--papel); border:1px solid var(--hairline); border-radius:99px; overflow:hidden; }
+.prontidao-recheio{ display:block; height:100%; background:var(--lacre); border-radius:99px; }
+.semana-componentes{ list-style:none; margin:12px 0 0; padding:0; }
+.semana-componentes li{ display:flex; justify-content:space-between; gap:12px; padding:4px 0;
+  font:400 12.5px/1.5 var(--sans); color:var(--tinta-sec); }
+.comp-nome{ font-weight:600; color:var(--tinta); }
+.comp-pontos{ font-family:var(--mono); font-size:11px; }
+.semana-prazo{ margin-top:20px; padding-top:14px; border-top:1px solid var(--hairline);
+  font:400 13.5px/1.6 var(--sans); color:var(--tinta-sec); }
+.semana-prazo strong{ color:var(--tinta); font-weight:600; }
+.dot{ width:8px; height:8px; border-radius:99px; display:inline-block; }
+.dot--lacre{ background:var(--lacre); }
+.dot--dourado{ background:#B98A2F; }
 
 .perfil-cabecalho h1{ font:400 44px/1.1 var(--serif); letter-spacing:-.005em; margin-top:10px; }
 .perfil-cabecalho h1 em{ font-style:italic; }

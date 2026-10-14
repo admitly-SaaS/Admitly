@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/alerta-prazo",
+      "schedule": "15 8 * * *"
+    },
+    {
+      "path": "/api/cron/digest-semanal",
+      "schedule": "15 9 * * 1"
+    }
+  ]
+}

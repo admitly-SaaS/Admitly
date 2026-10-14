@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">    <title>Admitly · Mock — Aba Redações</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  /* Mesmas variáveis das páginas v3 do app (apl-chat/perfil/oportunidades) */
+  :root{
+    --papel:#F6F2EA; --papel-elev:#FCFAF5; --tinta:#191512; --tinta-sec:#5C554B; --hairline:#E2DACB;
+    --lacre:#1A4D3A; --vermelho:#A6301F; --acento:#1F3A5F;
+    --serif:'Instrument Serif',Georgia,serif; --corpo:'Libre Caslon Text',Georgia,serif;
+    --sans:'Instrument Sans','Helvetica Neue',sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ -webkit-font-smoothing:antialiased; }
+  body{ background:var(--papel); color:var(--tinta); font-family:var(--corpo); font-size:15px; line-height:1.6; }
+  h1,h2,h3{ font-weight:400; }
+  a{ color:inherit; }
+
+  .caps{ font-family:var(--sans); text-transform:uppercase; letter-spacing:.16em; font-size:11px; font-weight:600; color:var(--tinta-sec); }
+  .mono{ font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; color:var(--tinta-sec); }
+
+  .dot{ display:inline-block; width:8px; height:8px; border-radius:50%; flex:none; }
+  .dot--tinta{ background:var(--tinta-sec); opacity:.45; }
+  .dot--vazado{ background:transparent; border:1.5px solid var(--tinta-sec); }
+  .dot--lacre{ background:var(--lacre); box-shadow:0 0 0 3px rgba(26,77,58,.14); }
+  .dot--acento{ background:var(--acento); box-shadow:0 0 0 3px rgba(31,58,95,.14); }
+
+  /* ===== topo (idêntico ao /aplicacoes) ===== */
+  .topo{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    padding:14px 24px; border-bottom:1px solid var(--hairline); background:var(--papel);
+  }
+  .marca-mini{ display:flex; align-items:center; gap:10px; }
+  .marca-mini-escudo{ width:22px; height:auto; }
+  .marca-mini span{ font:600 12px/1 var(--sans); text-transform:uppercase; letter-spacing:.18em; color:var(--acento); }
+  .nav{ display:flex; align-items:center; gap:20px; }
+  .nav > a{ font:600 13px/1 var(--sans); color:var(--tinta-sec); text-decoration:none; }
+  .nav > a:hover{ color:var(--acento); }
+  .nav > a.ativo{ color:var(--acento); text-decoration:underline; text-underline-offset:4px; text-decoration-thickness:1.5px; }
+
+  /* ===== folha ===== */
+  .folha{ max-width:880px; margin:0 auto; padding:44px 28px 90px; }
+
+  .cabecalho h1{ font:400 44px/1.1 var(--serif); letter-spacing:-.005em; margin-top:12px; }
+  .cabecalho h1 em{ font-style:italic; }
+  .intro{ margin-top:16px; font-size:16.5px; line-height:1.75; color:var(--tinta-sec); max-width:54ch; }
+  .meta-cab{
+    margin-top:24px; padding-top:14px; border-top:1px solid var(--tinta);
+    display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; font-family:var(--mono);
+    font-size:10.5px; letter-spacing:.08em; color:var(--tinta-sec);
+  }
+
+  /* ===== adicionar redação ===== */
+  .adicionar{ margin-top:30px; display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; }
+  .campo{ display:flex; flex-direction:column; gap:6px; }
+  .campo--cresce{ flex:1; min-width:220px; }
+  .campo input, .campo select, .campo textarea{
+    border:0; border-bottom:1px solid var(--hairline); background:transparent; border-radius:0;
+    padding:9px 2px; font:400 15.5px var(--corpo); color:var(--tinta);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .campo input::placeholder, .campo textarea::placeholder{ color:#B4AB9C; }
+  .campo input:focus, .campo select:focus, .campo textarea:focus{
+    outline:none; border-bottom-color:var(--lacre); box-shadow:0 1px 0 0 var(--lacre);
+  }
+  .campo select{
+    appearance:none; border:1px solid var(--hairline); border-radius:3px; padding:9px 30px 9px 11px; cursor:pointer;
+    background:var(--papel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%235C554B' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 11px center;
+  }
+
+  .btn-primario{
+    font:600 15px/1 var(--sans); padding:13px 24px; border-radius:3px; cursor:pointer;
+    background:var(--acento); color:var(--papel-elev); border:1px solid var(--acento); flex:none;
+  }
+  .btn-primario:hover{ background:#19304E; border-color:#19304E; }
+  .btn-secundario{
+    font:600 13px/1 var(--sans); padding:10px 16px; border-radius:3px; cursor:pointer;
+    background:transparent; color:var(--tinta); border:1px solid var(--hairline);
+  }
+  .btn-secundario:hover{ border-color:var(--acento); color:var(--acento); }
+  .btn-link{
+    font:600 13px/1 var(--sans); color:var(--acento); background:none; border:0; cursor:pointer;
+    text-decoration:underline; text-underline-offset:4px; text-decoration-thickness:1.5px; padding:0;
+  }
+  .btn-link:hover{ color:#19304E; }
+  .btn-link--discreto{ color:var(--tinta-sec); }
+  .btn-link--vermelho{ color:var(--vermelho); }
+
+  /* ===== cartão de redação ===== */
+  .cartao{
+    margin-top:22px; padding:22px 26px 20px;
+    background:var(--papel-elev); border:1px solid var(--hairline); border-radius:6px;
+  }
+  .cartao--final{ border-left:3px solid var(--acento); }
+  .cartao-topo{
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    padding-bottom:14px; border-bottom:1px solid var(--hairline);
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; color:var(--tinta-sec);
+  }
+  /* cartão fechado: a linha toda é o botão que abre o editor (acordeão) */
+  .cartao.fechado{ cursor:pointer; transition:border-color .15s ease, box-shadow .15s ease; }
+  .cartao.fechado:hover{ border-color:var(--tinta-sec); box-shadow:0 1px 0 0 var(--hairline); }
+  .abrir-hint{ font:600 11px/1 var(--sans); letter-spacing:.08em; color:var(--acento); flex:none; }
+  .recoller-hint{ font:600 11px/1 var(--sans); letter-spacing:.08em; color:var(--tinta-sec); cursor:pointer; background:none; border:0; padding:0; }
+  .recoller-hint:hover{ color:var(--acento); }
+  .cartao-fechado .cartao-topo{ border-bottom:0; padding-bottom:0; }
+
+  /* filtros do acordeão (mesma linguagem mono do rodapé) */
+  .filtros{ margin-top:26px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .filtro{
+    font:600 10.5px/1 var(--mono); letter-spacing:.1em; color:var(--tinta-sec);
+    padding:8px 12px; border:1px solid var(--hairline); border-radius:999px;
+    background:transparent; cursor:pointer;
+    transition:border-color .15s ease, color .15s ease, background-color .15s ease;
+  }
+  .filtro:hover{ border-color:var(--acento); color:var(--acento); }
+  .filtro.ativo{ background:var(--tinta); border-color:var(--tinta); color:var(--papel-elev); }
+  .vinculo{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .vinculo b{ font-weight:500; color:var(--tinta); }
+  .tag-status{ display:flex; align-items:center; gap:8px; flex:none; white-space:nowrap; }
+
+  /* status select (mesma anatomia do status de candidatura) */
+  .status{ position:relative; display:inline-flex; align-items:center; }
+  .status .dot{ position:absolute; left:11px; pointer-events:none; }
+  .status select{
+    appearance:none; cursor:pointer; font:600 13px/1 var(--sans); color:var(--tinta);
+    padding:9px 30px 9px 30px; border:1px solid var(--hairline); border-radius:3px; background:var(--papel);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%235C554B' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 11px center;
+  }
+
+  .nome-redacao{ margin-top:18px; font:400 26px/1.2 var(--serif); letter-spacing:-.005em; }
+  .prompt{
+    margin-top:8px; font-size:14px; line-height:1.65; color:var(--tinta-sec); font-style:italic;
+    max-width:62ch;
+  }
+  .caixa-editor{ margin-top:16px; }
+  .caixa-editor textarea{
+    width:100%; min-height:260px; resize:vertical; line-height:1.8; overflow:hidden;
+    border:1px solid var(--hairline); border-radius:4px; background:var(--papel);
+    padding:18px 20px; font:400 16px/1.8 var(--corpo); color:var(--tinta);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .caixa-editor textarea:focus{ outline:none; border-color:var(--lacre); box-shadow:0 1px 0 0 var(--lacre); }
+
+  /* trilha de palavras: mesma .apl-trilha do checklist */
+  .trilha-linha{
+    margin-top:10px; display:flex; align-items:center; gap:12px;
+    font-family:var(--mono); font-size:10px; letter-spacing:.12em; color:var(--tinta-sec);
+  }
+  .trilha-linha--estourada{ color:var(--vermelho); }
+  .trilha{ flex:1; height:3px; background:var(--hairline); overflow:hidden; }
+  .trilha-fill{ height:100%; background:var(--lacre); transition:width .25s ease; }
+  .trilha-fill--ok{ background:var(--acento); }
+
+  .acoes{ margin-top:16px; display:flex; gap:18px; flex-wrap:wrap; align-items:center; }
+
+  /* ===== análise da IA ===== */
+  .analise{
+    margin-top:18px; padding:20px 22px 16px;
+    background:var(--papel); border:1px solid var(--hairline); border-left:3px solid var(--lacre); border-radius:4px;
+  }
+  .analise .bloco{ margin-top:12px; }
+  .analise .bloco:first-child{ margin-top:14px; }
+  .analise p{ font-size:15px; line-height:1.7; }
+  .analise .trecho{ color:var(--lacre); font-weight:700; }
+  .analise .bloco, .analise .precepto{ margin:6px 0 0 18px; font-size:14.5px; line-height:1.65; }
+  .analise .bloco:first-of-type{ margin:14px 0 0 0; }
+  .analise .pergunta-final{
+    margin-top:16px; padding-top:12px; border-top:1px solid var(--hairline);
+    font-style:italic; color:var(--tinta);
+  }
+
+  /* ===== versões ===== */
+  .versoes{ margin-top:16px; border-top:1px solid var(--hairline); padding-top:12px; }
+  .versao{ display:flex; align-items:center; gap:12px; padding:7px 0; border-bottom:1px solid var(--hairline); }
+  .versao:last-of-type{ border-bottom:0; }
+  .versao .mono{ white-space:nowrap; }
+  .versao-trecho{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:14px; color:var(--tinta-sec); font-style:italic; }
+  .cartao-rodape{ margin-top:18px; padding-top:14px; border-top:1px solid var(--hairline); }
+
+  /* ===== redação fechada (cartões compactos) ===== */
+  .cartao-fechado{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
+  .cartao-fechado .nome-redacao{ margin-top:16px; flex:1 1 240px; font-size:22px; }
+  .cartao.fechado > .resumo{ margin-top:6px; font-size:14px; color:var(--tinta-sec); font-style:italic; }
+
+  /* ===== metas / painel vazio ===== */
+  .painel{
+    margin-top:30px; padding:34px 32px 30px;
+    background:var(--papel-elev); border:1px solid var(--hairline); border-radius:6px;
+  }
+  .painel-titulo{ font:400 24px/1.25 var(--serif); }
+  .painel-texto{ margin-top:10px; font-size:15.5px; line-height:1.7; color:var(--tinta-sec); max-width:50ch; }
+  .painel-acoes{ margin-top:22px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+
+  .rodape-mock{
+    max-width:880px; margin:0 auto; padding:26px 28px 60px; border-top:1px solid var(--tinta);
+    font-family:var(--mono); font-size:10px; letter-spacing:.08em; color:var(--tinta-sec);
+    display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;
+  }
+
+  @media (max-width:640px){
+    .topo{ padding:6px 16px 2px; gap:2px 8px; flex-wrap:wrap; }
+    .nav{ flex:1 1 100%; justify-content:space-between; gap:8px; }
+    .nav > a{ font-size:13px; padding:15px 6px; }
+    .marca-mini-escudo{ width:18px; }
+    .marca-mini span{ font-size:11px; letter-spacing:.14em; }
+    .folha{ padding:32px 16px 60px; }
+    .cabecalho h1{ font-size:34px; }
+    .cartao{ padding:20px 20px 18px; }
+    .adicionar{ flex-direction:column; align-items:stretch; }
+    .cartao input, .cartao select{ font-size:16px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="marca-mini">
+    <svg class="marca-mini-escudo" viewBox="-60 -74 120 158" role="img" aria-label="Escudo Admitly">
+      <path d="M-56 -70 L56 -70 L56 5 C56 45 28 68 0 80 C-28 68 -56 45 -56 5 Z" fill="#F6F2EA" stroke="#1F3A5F" stroke-width="5.5"/>
+      <g transform="translate(0 -10) scale(1.02)">
+        <polygon points="-39,-9 39,-9 0,-36" fill="#1F3A5F"/>
+        <rect x="-35" y="-6" width="70" height="4.5" fill="#1F3A5F"/>
+        <rect x="-29" y="-1.5" width="10" height="25" fill="#1F3A5F"/>
+        <rect x="-5" y="-1.5" width="10" height="25" fill="#1F3A5F"/>
+        <rect x="19" y="-1.5" width="10" height="25" fill="#1F3A5F"/>
+        <rect x="-36" y="23.5" width="72" height="4" fill="#1F3A5F"/>
+        <rect x="-40" y="27.5" width="80" height="4.5" fill="#1F3A5F"/>
+      </g>
+    </svg>
+    <span>Admitly</span>
+  </div>
+  <nav class="nav">
+    <a href="#">Oportunidades</a>
+    <a href="#">Aplicações</a>        <a href="#" class="ativo" aria-current="page">Redações</a>
+    <a href="#">Perfil</a>
+  </nav>
+</header>
+
+<div class="folha">
+
+  <header class="cabecalho">
+    <span class="caps">Sua escrita</span>
+    <h1>Minhas <em>redações</em>.</h1>
+    <p class="intro">
+      Cada redação vive dentro de uma candidatura, do prompt ao texto final. O rascunho
+      salva sozinho ao sair do campo — e "Salvar versão" congela o que estava bom.
+    </p>
+    <div class="meta-cab">
+      <span>3 REDAÇÕES · 1 EM REVISÃO · 1 FINAL</span>
+      <span>LIMITE MAIS CURTO: 320 PALAVRAS</span>
+    </div>
+  </header>
+
+  <!-- criar: escolhe candidatura, título e opcionalmente o prompt -->
+  <form class="adicionar">
+    <div class="campo">
+      <label class="caps" for="sel-candidatura">Candidatura</label>
+      <select id="sel-candidatura">
+        <option>Sem candidatura vinculada</option>
+        <option selected>Yale University</option>
+        <option>Stanford</option>
+        <option>Prep Program da Fundação Estudar</option>
+      </select>
+    </div>
+    <div class="campo campo--cresce">
+      <label class="caps" for="inp-titulo">Título da redação</label>
+      <input id="inp-titulo" placeholder="ex: Common App, supplemental de Yale..." />
+    </div>
+    <button type="button" class="btn-primario">Criar</button>
+  </form>
+
+  <!-- filtro do acordeão: encurta o pulo quando a lista cresce.
+       Cada filtros mostra os totais no mono. -->
+  <div class="filtros">
+    <button type="button" class="filtro ativo">TODAS · 3</button>
+    <button type="button" class="filtro">IDEIA · 1</button>
+    <button type="button" class="filtro">RASCUNHO · 0</button>
+    <button type="button" class="filtro">REVISÃO · 1</button>
+    <button type="button" class="filtro">FINAL · 1</button>
+  </div>
+
+  <!-- ================= redação aberta (editor) ================= -->
+  <article class="cartao">
+    <div class="cartao-topo">
+      <span class="vinculo">REDAÇÃO DE <b>YALE UNIVERSITY</b> · ATUALIZADO HOJE</span>
+      <button type="button" class="recoller-hint" title="Recolher este editor e voltar para a lista">RECOLHER ↑</button>
+      <span class="status">
+        <i class="dot dot--lacre" aria-hidden="true"></i>
+        <select aria-label="Status da redação">
+          <option>ideia</option>
+          <option>rascunho</option>
+          <option selected>revisão</option>
+          <option>final</option>
+        </select>
+      </span>
+    </div>
+
+    <h2 class="nome-redacao">Why Yale · Complemento</h2>
+    <p class="prompt">"Reflect on a membership you belong to. How has it shaped you?" — limite 320 palavras</p>
+
+    <div class="caixa-editor">
+      <textarea spellcheck="false">Meu "clube" mais improvável custou R$ 12 por mês: a planilha que minha tia me ensinou a manter para a feira da família. Durante um ano, cada fileira foi uma venda — e cada venda, uma conversa com quem comprava.
+
+Aos poucos deixei de registrar e comecei a perguntar. Por que a dona Lúcia comprava semanalmente e o Sr. Ivo só no dia do pagamento? Quando notei o padrão, mudei a feira: mudamos para fim de semana e as vendas cresceram.
+
+Na Yale quero estudar economia de verdade — não a dos gráficos, a das feiras. Curioso pelo curso de economia comportamental e pelos grupos de pesquisa aplicada, quero continuar perguntando: quem compra, por quê, e como fazer a feira crescer.</textarea>
+    </div>
+
+    <div class="trilha-linha">
+      <span>214 / 360 PALAVRAS</span>
+      <div class="trilha" role="presentation"><div class="trilha-fill" style="width:59%"></div></div>
+      <span>REVISÃO</span>
+    </div>
+
+    <div class="acoes">
+      <button type="button" class="btn-secundario">Salvar versão</button>
+      <button type="button" class="btn-secundario">Peça análise</button>
+      <button type="button" class="btn-link">+ tarefa: pedir revisão à professora</button>
+      <span class="mono">SALVO AGORA · RASCUNHO VIVO</span>
+    </div>
+
+    <!-- resultado da IA (contrato igual ao do mentor do chat) -->
+    <div class="analise">
+      <span class="caps">Análise do Admitly</span>
+
+      <div class="bloco">
+        <p><b>O que o texto comunica:</b> você aprendeu a ler dados no improviso — e isso, não o clube, é o que te move para economia.</p>
+      </div>
+      <div class="bloco">
+        <p><b>Pontos fortes:</b></p>
+        <p class="precepto">• Abertura concreta — <span class="trecho">"custou R$ 12 por mês"</span> ancora tudo em peça simples.</p>
+        <p class="precepto">• Virada narrativa — "deixei de registrar e comecei a perguntar" mostra iniciativa antes de dizer qualquer mérito.</p>
+      </div>
+      <div class="bloco">
+        <p><b>A melhorar:</b></p>
+        <p class="precepto">• "mudei a feira: mudamos" — mesmo verbete duas vezes; escolha um.</p>
+        <p class="precepto">• O fecho cita Yale em generalidades; vale um detalhe real (um curso, um prof, um programa).</p>
+        <p class="precepto">• Reescrita de exemplo: "Na Yale quero estudar economia de verdade" → <span class="trecho">"Em Yale, economia de novo virou obra de campo — e o campo é a feira."</span></p>
+      </div>
+      <p class="pergunta-final">Quer que eu aprofunde o fecho ou a abertura?</p>
+    </div>
+
+    <!-- versões salvas -->
+    <div class="versoes">
+      <span class="caps">Versões</span>
+      <div class="versao">
+        <span class="mono">v3 · 14 OUT</span>
+        <span class="versao-trecho">Meu "clube" mais improvável custou R$ 12 por mês: a planilha que minha tia…</span>
+        <button type="button" class="btn-link btn-link--discreto">Restaurar</button>
+      </div>
+      <div class="versao">
+        <span class="mono">v2 · 09 OCT</span>
+        <span class="versao-trecho">Quando minha tia me deu a planilha da feira, pensei que fosse só ajuda…</span>
+        <button type="button" class="btn-link btn-link--discreto">Restaurar</button>
+      </div>
+      <div class="versao">
+        <span class="mono">v1 · 02 OCT</span>
+        <span class="versao-trecho">Sempre amei números, mas nunca soube onde eles aparecem na vida real…</span>
+        <button type="button" class="btn-link btn-link--discreto">Restaurar</button>
+      </div>
+    </div>
+
+    <div class="cartao-rodape">
+      <button type="button" class="btn-link btn-link--discreto">Remover redação</button>
+    </div>
+  </article>
+
+  <!-- ================= redação fechada · rascunho ================= -->
+  <!-- no acordeão: linha compacta. Clicar aqui abre o editor no lugar,
+       e o que estava aberto recolhe. Só um editor por vez. -->
+  <article class="cartao fechado">
+    <div class="cartao-topo">
+      <span class="vinculo">REDAÇÃO DE <b>PREP PROGRAM DA FUNDAÇÃO ESTUDAR</b> · ONTEM</span>
+      <span class="abrir-hint">ABRIR ESCREVER ↓</span>
+    </div>
+    <div class="cartao-fechado">
+      <h2 class="nome-redacao">O que me leva a um intercâmbio</h2>
+      <span class="tag-status">
+        <i class="dot dot--vazado" aria-hidden="true"></i>
+        <span class="mono">IDEIA</span>
+      </span>
+    </div>
+    <p class="resumo">Ainda sem limite de palavras definido — o prompt do programa não exige texto, mas o vídeo pede roteiro.</p>
+  </article>
+
+  <!-- ================= redação fechada · final ================= -->
+  <!-- final também é clicável: reabrir só troca o status de volta
+       para revisão dentro do editor; abrir é sempre seguro. -->
+  <article class="cartao cartao--final fechado">
+    <div class="cartao-topo">
+      <span class="vinculo">REDAÇÃO DE <b>STANFORD</b> · FINALIZADO EM 05 OCT</span>
+      <span class="abrir-hint">ABRIR PARA CONFERIR ↓</span>
+    </div>
+    <div class="cartao-fechado">
+      <h2 class="nome-redacao">Por que Stanford, na minha voz</h2>
+      <span class="tag-status">
+        <i class="dot dot--acento" aria-hidden="true"></i>
+        <span class="mono">FINAL</span>
+      </span>
+    </div>
+    <p class="resumo">218 palavras · 4 versões salvas · pronto para subir no portal.</p>
+  </article>
+
+  <!-- ===== painel vazio (estado inicial da aba) ===== -->
+  <section class="painel" style="margin-top:34px">
+    <p class="painel-titulo">Nenhuma redação por aqui ainda.</p>
+    <p class="painel-texto">
+      Comece pela candidatura que exige redação — o Common App pede um texto de até 650
+      palavras sobre quem você é. Se travar, escreva no chat e peça um esboço de partida.
+    </p>
+    <div class="painel-acoes">
+      <a class="btn-primario" href="#">Escrever no chat</a>
+      <a class="btn-secundario" href="#">Ver aplicações pedindo redação</a>
+    </div>
+  </section>
+
+</div>
+
+<footer class="rodape-mock">
+  <span>MOCK DE LAYOUT · DADOS FIXOS · /redacoes</span>
+  <span>DESIGN V3 · PAPEL + LACRE · INSTRUMENT SERIF / CASLON / PLEX MONO</span>
+</footer>
+
+</body>
+</html>
