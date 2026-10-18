@@ -178,6 +178,32 @@ test('filtro Prazo próximo só pega deadlines abertas em até 60 dias', () => {
   assert.deepEqual(r.map((o) => o.name), ['perto']);
 });
 
+test('múltiplos filtros (array) combinam com lógica OU', () => {
+  const lista = [
+    opp({ name: 'gratis', program_cost: 0 }),
+    opp({ name: 'online', location_type: 'online' }),
+    opp({ name: 'presencial-pago', program_cost: 3000, location_type: 'presencial' }),
+  ];
+  const r = filterOpportunities(lista, ['Grátis', 'Online'], PERFIL_9ANO);
+  assert.deepEqual(r.map((o) => o.name).sort(), ['gratis', 'online']);
+});
+
+test('múltiplos filtros: programa que casa com qualquer chip entra (mesmo sem casar todos)', () => {
+  const lista = [
+    opp({ name: 'bolsa', full_scholarship_available: true }),
+    opp({ name: 'perto', application_deadline: diasNoFuturo(10) }),
+    opp({ name: 'fora-de-tudo', program_cost: 3000, location_type: 'presencial' }),
+  ];
+  const r = filterOpportunities(lista, ['Com bolsa', 'Prazo próximo'], PERFIL_9ANO);
+  assert.deepEqual(r.map((o) => o.name).sort(), ['bolsa', 'perto']);
+});
+
+test('array vazio ou só com "Todas" devolve a lista inteira (nenhum filtro)', () => {
+  const lista = [opp({ name: 'A' }), opp({ name: 'B' })];
+  assert.equal(filterOpportunities(lista, [], PERFIL_9ANO).length, 2);
+  assert.equal(filterOpportunities(lista, ['Todas'], PERFIL_9ANO).length, 2);
+});
+
 test('calcularMatches ordena Alta → Média → Baixa', () => {
   const lista = [
     opp({ name: 'BAIXA-ano12', eligible_grades: ['10th', '11th'] }),

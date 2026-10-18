@@ -237,6 +237,19 @@ export default function Extracurriculares() {
             <div className="campo">
               <label className="caps-sec" htmlFor="ext-descricao">O que você faz — fatos, números, resultado</label>
               <textarea id="ext-descricao" name="descricao" rows={3} value={form.descricao} placeholder="ex: organizo 2 torneios por ano com 12 equipes; montei um dron no 9º ano..." onChange={(e) => setForm((f) => ({ ...f, descricao: e.target.value }))} />
+              {/* Guia de estrutura (feedback 15/10): ajuda opcional — fechada por padrão */}
+              <details className="guia-estrutura">
+                <summary className="caps-sec">Precisa de ajuda? Ver a estrutura sugerida</summary>
+                <div className="guia-corpo">
+                  <p>Uma boa descrição de atividade cabe em 3 linhas, nessa ordem:</p>
+                  <ol>
+                    <li><strong>O papel</strong> — o que você é lá dentro (fundador, capitã, voluntária…).</li>
+                    <li><strong>A ação</strong> — o que você faz de concreto, com verbo: organizo, ensino, construo.</li>
+                    <li><strong>Escala e resultado</strong> — números e impacto: quantos, quanto, o que mudou.</li>
+                  </ol>
+                  <p className="guia-exemplo">Ex.: “Fundador do clube de robótica da escola — organizo 2 torneios por ano com 12 equipes; ensinei Arduino a 30 alunos do 9º ano; 3 projetos foram a feira regional.”</p>
+                </div>
+              </details>
             </div>
             <div className="ext-form-acoes">
               <button type="submit" className="btn-primario">Criar atividade</button>
@@ -422,6 +435,15 @@ const CSS = `
 .ext-adicionar{ margin-top:30px; padding:22px 26px 20px; background:var(--papel-elev); border:1px solid var(--hairline); border-radius:6px; display:flex; flex-direction:column; gap:14px; }
 .ext-form-linha{ display:flex; gap:16px; flex-wrap:wrap; }
 .ext-form-acoes{ display:flex; gap:12px; align-items:center; }
+/* Guia de estrutura opcional (feedback 15/10) */
+.guia-estrutura{ margin-top:2px; }
+.guia-estrutura summary{ cursor:pointer; list-style:none; text-decoration:underline; text-underline-offset:3px; text-decoration-thickness:1px; }
+.guia-estrutura summary::-webkit-details-marker{ display:none; }
+.guia-estrutura summary:hover{ color:var(--tinta); }
+.guia-corpo{ margin-top:8px; padding:12px 14px; border:1px solid var(--hairline); border-radius:4px; background:var(--papel-elev); font-size:14.5px; line-height:1.65; color:var(--tinta-sec); }
+.guia-corpo p{ margin:0; }
+.guia-corpo ol{ margin:8px 0 0; padding-left:20px; display:flex; flex-direction:column; gap:4px; }
+.guia-exemplo{ margin-top:8px !important; font-style:italic; }
 .campo{ display:flex; flex-direction:column; gap:6px; }
 .campo--cresce{ flex:1; min-width:220px; }
 .campo--pequeno{ width:140px; }

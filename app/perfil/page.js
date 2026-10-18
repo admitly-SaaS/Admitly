@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
+import { lerPrefs, gravarPrefs, normalizarPrefs } from '../../lib/email-prefs.js'
 import { listarAtividades, resumoParaPerfil } from '../../lib/extracurriculares.js'
 import { calcularStreak, linhaStreak, prontidao as calcularProntidao, gerarMissoes, proximoPrazo } from '../../lib/atividade.js'
 
@@ -32,6 +33,9 @@ export default function Perfil() {
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState('')
   const [atividadesResumo, setAtividadesResumo] = useState('')
   const [semana, setSemana] = useState(null)
+  const [prefs, setPrefs] = useState(normalizarPrefs(null))
+  const [avisoPrefs, setAvisoPrefs] = useState(null)
+  const [salvandoPrefs, setSalvandoPrefs] = useState(false)
 
   // ===== Sua semana: coleta de dados para as três métricas ================
   async function montarSemana(user, perfilSalvo, atividades) {
@@ -86,6 +90,13 @@ export default function Perfil() {
       const atividades = ats?.data || []
       setAtividadesResumo(resumoParaPerfil(atividades))
       montarSemana(user, salvo, atividades)
+
+      // Preferências de e-mail (migration email_prefs): tabela ausente no
+      // painel degrada para aviso — os toggles nem aparecem, nada de fingir.
+      const lidas = await lerPrefs(supabase, user.id)
+      if (lidas.error?.code === 'TABELA_AUSENTE') setAvisoPrefs('migration')
+      if (lidas.prefs) setPrefs(lidas.prefs)
+
       setCarregando(false)
     }
 
@@ -95,6 +106,22 @@ export default function Perfil() {
   const atualizarCampo = (nome, valor) => {
     setFormulario((atual) => ({ ...atual, [nome]: valor }))
     setMensagem('')
+  }
+
+  // Um toggle por tipo de e-mail. Otimista: muda na hora, a gravação confirma
+  // (ou desfaz com aviso — igual ao padrão do mapa de documentos).
+  const alternarPrefs = async (chave, valorNovo) => {
+    const anterior = prefs
+    setPrefs((atual) => ({ ...atual, [chave]: valorNovo }))
+    setSalvandoPrefs(true)
+    const { data: { user: quem } } = await supabase.auth.getUser()
+    const { error } = await gravarPrefs(quem?.id, { ...prefs, [chave]: valorNovo }, supabase)
+    setSalvandoPrefs(false)
+    if (error) {
+      setPrefs(anterior)
+      setMensagem('Não foi possível salvar a preferência. Tente novamente.')
+      setMsgBoa(false)
+    }
   }
 
   const preenchidos = Object.entries(formulario)
@@ -370,6 +397,37 @@ export default function Perfil() {
             </p>
           )}
 
+          <div className="prefs-e-mail">
+            <span className="caps-sec">E-mails do Admitly</span>
+            <p className="prefs-e-mail--nota">
+              Duas mensagens no máximo por semana — o resumo de segunda e o alerta de prazo. Você pausa cada um no toque abaixo; a pausa vale para as próximas rodadas, e reativar volta ao ritmo normal.
+            </p>
+            {avisoPrefs === 'migration' ? (
+              <p className="prefs-e-mail--aviso">As preferências de e-mail não estão ativas ainda (migration pendente no painel).</p>
+            ) : (
+              <>
+                <label className="prefs-toggle">
+                  <input
+                    type="checkbox"
+                    checked={!prefs.pausar_digest}
+                    onChange={(e) => alternarPrefs('pausar_digest', !e.target.checked)}
+                    disabled={salvandoPrefs}
+                  />
+                  <span>Resumo semanal <em>(segunda de manhã)</em></span>
+                </label>
+                <label className="prefs-toggle">
+                  <input
+                    type="checkbox"
+                    checked={!prefs.pausar_alerta}
+                    onChange={(e) => alternarPrefs('pausar_alerta', !e.target.checked)}
+                    disabled={salvandoPrefs}
+                  />
+                  <span>Alerta de prazo <em>(D-7 e D-2 de cada candidatura)</em></span>
+                </label>
+              </>
+            )}
+          </div>
+
           <button type="submit" className="btn-primario" disabled={salvando}>
             {salvando ? 'Salvando...' : 'Salvar perfil'}
           </button>
@@ -508,6 +566,13 @@ const CSS = `
 }
 .btn-primario:hover{ background:#19304E; border-color:#19304E; }
 .btn-primario:disabled{ background:#DAD2C2; border-color:#DAD2C2; color:#8F8678; cursor:not-allowed; }
+
+.prefs-e-mail{ display:flex; flex-direction:column; gap:10px; padding:18px 0 4px; border-top:1px solid var(--hairline); }
+.prefs-e-mail--nota{ font-size:14.5px; line-height:1.6; color:var(--tinta-sec); }
+.prefs-e-mail--aviso{ font-size:13.5px; color:var(--vermelho); }
+.prefs-toggle{ display:flex; align-items:center; gap:10px; cursor:pointer; font-size:15.5px; }
+.prefs-toggle input{ accent-color:var(--lacre); width:16px; height:16px; cursor:pointer; }
+.prefs-toggle em{ font-family:var(--mono); font-style:normal; font-size:11px; letter-spacing:.04em; color:var(--tinta-sec); }
 
 .envelope{
   display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;

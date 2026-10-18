@@ -71,3 +71,30 @@ test('deveRodarAgora: alerta diário — tick às 8:15 após rodada de ontem 8:2
   // mas às 9:01 (fora do slot de 8h) também não é alvo.
   assert.equal(deveRodarAgora(JOBS.alerta, brt(2026, 10, 13, 9, 1), hojeCedo.toISOString()), false);
 });
+
+// ---- regressão do bug real (16/10/2026, em produção do dev) -------------------
+// A regra antiga usava "minutosUltima >= inicio + intervalo" como rodar-de-novo;
+// com a catch-up de sexta à noite (nunca rodou), o job re-executava TODO tick:
+// 4 digests enviados em ~10 min. O registro pós-abertura do slot É a execução
+// deste slot — nada re-dispara até o próximo slot-alvo.
+
+test('digest: rodada fora do slot, posterior à abertura → slot atendido, não re-roda', () => {
+  // Rodou sexta 21:25 BRT (catch-up, nunca tinha rodado). Slot desta semana = segunda 12/10 9h.
+  const sextaNoite = brt(2026, 10, 16, 21, 25);
+  // Tick 1 min depois (a cada 60s): NÃO pode re-executar.
+  assert.equal(deveRodarAgora(JOBS.digest, brt(2026, 10, 16, 21, 26), sextaNoite.toISOString()), false);
+  // Nem 2h depois, mesmo dia.
+  assert.equal(deveRodarAgora(JOBS.digest, brt(2026, 10, 16, 23, 30), sextaNoite.toISOString()), false);
+});
+
+test('digest: catch-up na sexta não trava a semana seguinte — segunda 9h roda de novo', () => {
+  const sextaNoite = brt(2026, 10, 16, 21, 25);
+  const segundaSeguinte = brt(2026, 10, 19, 9, 5); // próximo slot-alvo
+  assert.equal(deveRodarAgora(JOBS.digest, segundaSeguinte, sextaNoite.toISOString()), true);
+});
+
+test('alerta: rodada de hoje fora da janela da 8h → slot do dia atendido, não re-roda', () => {
+  const rodou21 = brt(2026, 10, 16, 21, 20);
+  assert.equal(deveRodarAgora(JOBS.alerta, brt(2026, 10, 16, 21, 21), rodou21.toISOString()), false);
+  assert.equal(deveRodarAgora(JOBS.alerta, brt(2026, 10, 16, 23, 0), rodou21.toISOString()), false);
+});

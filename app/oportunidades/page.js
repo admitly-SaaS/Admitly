@@ -169,7 +169,10 @@ export default function Oportunidades() {
   // Reações do Radar (radar_descartes de lib/radar-descartes.js): mapa
   // opportunity_id → 'descartado' | 'feito'. Vazio até o load/devolver.
   const [descartes, setDescartes] = useState(() => new Map());
-  const [filtro, setFiltro] = useState('Todas');
+  // Múltiplos filtros ('Todas' desmarca tudo e é exclusivo): Set de valores
+  // que casam com OU pela lib de matching. Carregamos como ['Todas'] (vazio =
+  // nada filtrado) e cada chip vira toggle independente.
+  const [filtro, setFiltro] = useState(() => new Set());
   const [busca, setBusca] = useState('');
   const [ordenar, setOrdenar] = useState('compatibilidade');
   const [carregando, setCarregando] = useState(true);
@@ -366,8 +369,9 @@ export default function Oportunidades() {
   const modoOrdem = semPerfil ? 'prazo' : ordenar;
 
   const visiveis = useMemo(() => {
+    const filtrosAtivos = filtro.size ? Array.from(filtro) : 'Todas';
     const filtradas = matcheados.filter(
-      (opp) => filterOpportunities([opp], filtro, perfil).length > 0 && bateBusca(opp, busca)
+      (opp) => filterOpportunities([opp], filtrosAtivos, perfil).length > 0 && bateBusca(opp, busca)
     );
     // Programas com inscrição encerrada (ou sem data) nunca abrem a lista:
     // o que dá para aplicar agora vem primeiro, em qualquer modo de ordenação.
@@ -380,7 +384,7 @@ export default function Oportunidades() {
 
   const limparFiltros = () => {
     setBusca('');
-    setFiltro('Todas');
+    setFiltro(new Set());
   };
 
   return (
@@ -423,6 +427,12 @@ export default function Oportunidades() {
               <span>{acervo.total} {acervo.total === 1 ? 'PROGRAMA' : 'PROGRAMAS'} NO ACERVO</span>
               {acervo.ultima && <span>ÚLTIMA VERIFICAÇÃO: {formatarData(acervo.ultima)}</span>}
             </p>
+            {/* Incentivo de retorno (feedback de usuários 15/10): prometer cadência,
+                sem prometer dia exato — o acervo é revisado semanalmente e o que
+                mudou aparece no Radar e no digest semanal por e-mail. */}
+            <p className="opps-cadencia mono-linha">
+              NOVIDADES TODA SEMANA — O QUE MUDOU APARECE NO RADAR ABAIXO E NO RESUMO SEMANAL POR E-MAIL
+            </p>
           </header>
 
           <Radar
@@ -462,23 +472,46 @@ export default function Oportunidades() {
             <div className="chips">
               <span className="caps-sec">Filtros</span>
               <div className="chips-linha">
-                {FILTROS.map((f) => (
-                  <button
-                    key={f.valor}
-                    type="button"
-                    className={`chip ${filtro === f.valor ? 'ativo' : ''}`}
-                    aria-pressed={filtro === f.valor}
-                    disabled={f.valor === 'Compatíveis' && semPerfil}
-                    title={
-                      f.valor === 'Compatíveis' && semPerfil
-                        ? 'Preencha seu perfil para calcular compatibilidade'
-                        : undefined
-                    }
-                    onClick={() => setFiltro(f.valor)}
-                  >
-                    {f.rotulo}
-                  </button>
-                ))}
+                {FILTROS.map((f) => {
+                  if (f.valor === 'Todas') {
+                    return (
+                      <button
+                        key={f.valor}
+                        type="button"
+                        className={`chip ${filtro.size === 0 ? 'ativo' : ''}`}
+                        aria-pressed={filtro.size === 0}
+                        onClick={() => setFiltro(new Set())}
+                      >
+                        {f.rotulo}
+                      </button>
+                    );
+                  }
+                  const ativo = filtro.has(f.valor);
+                  return (
+                    <button
+                      key={f.valor}
+                      type="button"
+                      className={`chip ${ativo ? 'ativo' : ''}`}
+                      aria-pressed={ativo}
+                      disabled={f.valor === 'Compatíveis' && semPerfil}
+                      title={
+                        f.valor === 'Compatíveis' && semPerfil
+                          ? 'Preencha seu perfil para calcular compatibilidade'
+                          : undefined
+                      }
+                      onClick={() =>
+                        setFiltro((atual) => {
+                          const proximo = new Set(atual);
+                          if (proximo.has(f.valor)) proximo.delete(f.valor);
+                          else proximo.add(f.valor);
+                          return proximo;
+                        })
+                      }
+                    >
+                      {f.rotulo}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -489,6 +522,7 @@ export default function Oportunidades() {
                 ? 'NENHUM PROGRAMA'
                 : `${visiveis.length} DE ${acervo.total} ${visiveis.length === 1 ? 'PROGRAMA' : 'PROGRAMAS'}`}
               {temBusca ? ` · BUSCA: ${busca.trim().toUpperCase()}` : ''}
+              {filtro.size ? ` · ${filtro.size} ${filtro.size === 1 ? 'FILTRO' : 'FILTROS'}` : ''}
             </span>
             <div className="ordenar" role="group" aria-label="Ordenar resultados">
               <span className="caps-sec">Ordem</span>
@@ -666,6 +700,7 @@ const CSS = `
   display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;
   font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; color:var(--tinta-sec);
 }
+.opps-cadencia{ margin-top:14px; }
 
 /* ===== radar (o que mudou desde a última visita) ===== */
 .radar{ margin-top:30px; padding:20px 22px 18px;

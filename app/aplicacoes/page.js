@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 import { prazoStatus, formatarData } from '../../lib/prazos.js'
+import { TIPOS, carregarDocumentos, gravarEstado, proximoEstado, desmarcarEstado, criticosFaltando } from '../../lib/documentos.js'
 
 // Acompanhamento das candidaturas no design v3 (papel, Caslon, azul-tinta).
 // A linguagem visual é a mesma do catálogo: dot de status, mono para dados,
@@ -107,6 +108,8 @@ export default function Aplicacoes() {
   const [mensagem, setMensagem] = useState(null)
   const [menuAberto, setMenuAberto] = useState(false)
   const [salvando, setSalvando] = useState(false)
+  const [documentos, setDocumentos] = useState(() => new Map())
+  const [erroDocumentos, setErroDocumentos] = useState(false)
 
   const carregarDados = async (uid) => {
     const { data: aps } = await supabase
@@ -123,6 +126,13 @@ export default function Aplicacoes() {
 
     setAplicacoes(aps || [])
     setTarefas(tks || [])
+
+    // Mapa de documentos (feedback 15/10): degrada em aviso quando a migration
+    // application_documents ainda não rodou — marcação desativada, sem fingir.
+    const docs = await carregarDocumentos(uid, supabase)
+    setDocumentos(docs.documentos || new Map())
+    setErroDocumentos(docs.error?.code === 'TABELA_AUSENTE')
+
     setCarregando(false)
   }
 
@@ -252,6 +262,36 @@ export default function Aplicacoes() {
   const removerTarefa = async (id) => {
     setTarefas((prev) => prev.filter((t) => t.id !== id))
     await supabase.from('tasks').delete().eq('id', id)
+  }
+
+  // Mapa de documentos: um toque cicla falta → pedindo → pronto → falta.
+  // 'nao-pede' é escolhido pelo botão pequeno, para não atrapalhar o ciclo.
+  // Otimista no Map local; erro de escrita volta ao estado anterior e avisa.
+  const mudarDocumento = async (applicationId, tipo, novoEstado) => {
+    const chave = `${applicationId}__${tipo}`
+    const anterior = documentos.get(chave) || 'falta'
+    setDocumentos((prev) => {
+      const proximo = new Map(prev)
+      proximo.set(chave, novoEstado)
+      return proximo
+    })
+
+    const { error } = await gravarEstado(userId, applicationId, tipo, novoEstado, supabase)
+    if (error) {
+      setDocumentos((prev) => {
+        const volta = new Map(prev)
+        volta.set(chave, anterior)
+        return volta
+      })
+      avisar(error.code === 'TABELA_AUSENTE'
+        ? 'O mapa de documentos não está ativo ainda (migration pendente no painel).'
+        : 'Não foi possível salvar a marcação.', 'erro')
+    }
+  }
+
+  const ciclarDocumento = (applicationId, tipo) => {
+    const estadoAtual = documentos.get(`${applicationId}__${tipo}`) || 'falta'
+    mudarDocumento(applicationId, tipo, proximoEstado(estadoAtual))
   }
 
   const tarefasGerais = tarefas.filter((t) => !t.application_id)
@@ -398,6 +438,9 @@ export default function Aplicacoes() {
           const modelo = ap.details?.model === 'program' ? 'program' : 'university'
           const status = ap.status || 'pesquisando'
           const prazo = prazoStatus({ application_deadline: ap.deadline })
+          // Sugestão automática (feedback 16/10): críticos em falta quando
+          // o prazo entra na janela crítica (< 30 dias). Pura da lib.
+          const criticos = criticosFaltando(documentos, ap.id, prazo.dias)
           const dados = linhaDados(ap, modelo)
           const custo = linhaCusto(ap, modelo)
 
@@ -483,6 +526,89 @@ export default function Aplicacoes() {
 
               {detalhesAbertos[ap.id] && (
                 <div className="apl-detalhes">
+                  {/* Mapa de documentos (feedback 15/10): o que já tem, o que
+                      está pedido e o que falta — por candidatura. */}
+                  <section className="apl-docmaps" aria-label={`Mapa de documentos de ${ap.university || 'candidatura'}`}>
+                    <div className="apl-docmaps-cabecalho">
+                      <span className="caps-sec">Mapa de documentos</span>
+                      {(() => {
+                        const contam = TIPOS.filter((t) => documentos.get(`${ap.id}__${t.id}`) !== 'nao-pede')
+                        const prontos = contam.filter((t) => documentos.get(`${ap.id}__${t.id}`) === 'pronto').length
+                        return (
+                          <span className="mono-linha">
+                            {erroDocumentos
+                              ? 'INDISPONÍVEL — MIGRATION PENDENTE'
+                              : contam.length === 0
+                                ? 'NENHUM DOCUMENTO EXIGIDO'
+                                : `${prontos} DE ${contam.length} EM MÃOS`}
+                          </span>
+                        )
+                      })()}
+                    </div>
+
+                    {erroDocumentos && (
+                      <p className="apl-docmap-aviso">
+                        O mapa de documentos depende da migration <code>application_documents</code> — aplique-a no painel do Supabase.
+                      </p>
+                    )}
+
+                    <ul className="apl-docmap-lista">
+                      {TIPOS.map((t) => {
+                        const chave = `${ap.id}__${t.id}`
+                        const estado = documentos.get(chave) || 'falta'
+                        // Sugestão automática (feedback 16/10): prazo < 30 dias
+                        // e crítico ainda em falta → destaque de urgência.
+                        const critico = criticos.some((c) => c.id === t.id) && estado === 'falta'
+                        return (
+                          <li key={t.id} className={`apl-docmap-item apl-docmap-item--${estado} ${critico ? 'apl-docmap-item--critico' : ''}`}>
+                            <button
+                              type="button"
+                              className="apl-docmap-nome"
+                              onClick={() => ciclarDocumento(ap.id, t.id)}
+                              disabled={erroDocumentos}
+                              title={`Estado atual: ${estado}. Toque para avançar (falta → pedindo → pronto).`}
+                            >
+                              <i className={`dot dot--${estado}`} aria-hidden="true" />
+                              <span>{t.nome}</span>
+                              <em>
+                                {critico
+                                  ? `CRÍTICO · FECHA EM ${prazo.dias} ${prazo.dias === 1 ? 'DIA' : 'DIAS'}`
+                                  : estado === 'falta'
+                                    ? t.dica
+                                    : estado === 'pedindo'
+                                      ? 'pedindo…'
+                                      : estado === 'pronto'
+                                        ? 'em mãos ✓'
+                                        : 'não pede'}
+                              </em>
+                            </button>
+                            <button
+                              type="button"
+                              className="apl-docmap-nao-pede"
+                              onClick={() => mudarDocumento(ap.id, t.id, estado === 'nao-pede' ? 'falta' : 'nao-pede')}
+                              disabled={erroDocumentos}
+                              aria-pressed={estado === 'nao-pede'}
+                              title={estado === 'nao-pede' ? 'Voltar para “falta”' : 'Esta candidatura não pede esse documento'}
+                            >
+                              {estado === 'nao-pede' ? 'pede sim' : 'não pede'}
+                            </button>
+                            {(estado === 'pedindo' || estado === 'pronto') && (
+                              <button
+                                type="button"
+                                className="apl-docmap-desmarcar"
+                                onClick={() => mudarDocumento(ap.id, t.id, desmarcarEstado(estado))}
+                                disabled={erroDocumentos}
+                                title={`Desmarcar: “${estado === 'pedindo' ? 'pedindo' : 'em mãos'}” volta a “falta” num toque, sem passar pelo ciclo`}
+                              >
+                                desmarcar
+                              </button>
+                            )}
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </section>
+
                   <DetalhesCandidatura ap={ap} modelo={modelo} atualizarDetalhe={atualizarDetalhe} />
                 </div>
               )}
@@ -805,6 +931,35 @@ const CSS = `
 .dot--acento{ background:var(--acento); box-shadow:0 0 0 3px rgba(31,58,95,.14); }
 .dot--vermelho{ background:var(--vermelho); box-shadow:0 0 0 3px rgba(166,48,31,.14); }
 .dot--tinta{ background:var(--tinta-sec); opacity:.45; }
+
+/* ===== mapa de documentos (feedback 15/10) ===== */
+.dot--falta{ background:transparent; border:1.5px solid var(--vermelho); }
+.dot--pedindo{ background:transparent; border:1.5px solid var(--tinta-sec); }
+.dot--pronto{ background:var(--lacre); box-shadow:0 0 0 3px rgba(26,77,58,.14); }
+.dot--nao-pede{ background:transparent; border:1.5px dashed var(--hairline); }
+
+.apl-docmaps{ margin-top:18px; padding:16px 18px 14px; border:1px solid var(--hairline); border-radius:6px; background:var(--papel); }
+.apl-docmaps + .apl-campos,
+.apl-docmaps + *{ margin-top:14px; }
+.apl-docmaps-cabecalho{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding-bottom:10px; border-bottom:1px solid var(--hairline); }
+.apl-docmap-aviso{ margin:10px 0 0; font-size:13.5px; line-height:1.6; color:var(--vermelho); }
+.apl-docmap-aviso code{ font:500 12px var(--mono); background:var(--papel-elev); padding:1px 5px; border-radius:3px; border:1px solid var(--hairline); }
+.apl-docmap-lista{ list-style:none; margin:0; padding:0; }
+.apl-docmap-item{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--hairline); }
+.apl-docmap-item:last-child{ border-bottom:0; }
+.apl-docmap-item--nao-pede .apl-docmap-nome{ opacity:.5; }
+.apl-docmap-item--critico{ background:rgba(166,48,31,.05); }
+.apl-docmap-item--critico .apl-docmap-nome em{ color:var(--vermelho); font-weight:500; }
+.apl-docmap-item--pronto .apl-docmap-nome em{ color:var(--lacre); }
+.apl-docmap-nome{ display:flex; align-items:center; gap:10px; flex:1; min-width:0; background:none; border:0; padding:2px 0; cursor:pointer; text-align:left; }
+.apl-docmap-nome:hover span{ color:var(--lacre); }
+.apl-docmap-nome em{ font-family:var(--mono, 'IBM Plex Mono', monospace); font-style:normal; font-size:10.5px; letter-spacing:.06em; color:var(--tinta-sec); margin-left:auto; white-space:nowrap; }
+.apl-docmap-nome span{ font-size:15.5px; color:var(--tinta); }
+.apl-docmap-nao-pede{ flex:none; font:600 10.5px/1 var(--sans); letter-spacing:.08em; text-transform:uppercase; color:var(--tinta-sec); background:none; border:1px solid var(--hairline); border-radius:3px; padding:5px 8px; cursor:pointer; }
+.apl-docmap-nao-pede:hover{ border-color:var(--tinta-sec); }
+.apl-docmap-nao-pede[aria-pressed="true"]{ color:var(--vermelho); border-color:var(--vermelho); }
+.apl-docmap-desmarcar{ flex:none; font:600 10.5px/1 var(--sans); letter-spacing:.08em; text-transform:uppercase; color:var(--tinta-sec); background:none; border:1px dashed var(--hairline); border-radius:3px; padding:5px 8px; cursor:pointer; }
+.apl-docmap-desmarcar:hover{ color:var(--vermelho); border-color:var(--tinta-sec); }
 
 /* ===== cartão da candidatura ===== */
 .apl-cartao{

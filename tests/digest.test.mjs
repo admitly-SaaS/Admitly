@@ -10,11 +10,17 @@ const {
   catalogoProximo,
   valeEnviarDigest,
   alertasDePrazo,
+  alertasDeFavoritos,
   valeEnviarAlerta,
   ALVOS_ALERTA,
   STATUS_FINAIS,
   montarDigestHtml,
   montarAlertaHtml,
+  fotoDaSemana,
+  deltaDaSemana,
+  linhaDelta,
+  fraseDelta,
+  notaDelta,
 } = require('../lib/digest.js');
 const { enviarEmail, montarEmailBase, urlDoSite } = require('../lib/email.js');
 
@@ -169,7 +175,131 @@ test('valeEnviarAlerta: lista vazia não envia', () => {
   assert.equal(valeEnviarAlerta([{ application_id: 'a' }]), true);
 });
 
-// ---- HTML ------------------------------------------------------------------------
+// ---- foto/Δ da semana ----------------------------------------------------------
+
+test('Δ da semana: primeira semana (sem foto) é null — digest sai sem comparação', () => {
+  const fotoHoje = fotoDaSemana(progressoDaSemana({
+    tarefas: [{ done: true }, { done: false }],
+    ensaios: [ESSAY('final')],
+  }));
+  assert.deepEqual(fotoHoje, {
+    tarefasFeitas: 1,
+    tarefasTotal: 2,
+    candidaturasAtivas: 0,
+    redacoesFinal: 1,
+    redacoesTotal: 1,
+    atividadesProntas: 0,
+  });
+  assert.equal(deltaDaSemana(null, fotoHoje), null, 'sem foto anterior não há delta (nada inventado)');
+  assert.equal(deltaDaSemana('lixo', fotoHoje), null, 'foto quebrada também é sem comparação');
+  assert.equal(linhaDelta(null), '');
+});
+
+test('Δ da semana: avanço real conta tarefas/redações; nada mudou é linha vazia', () => {
+  const fotoAntes = fotoDaSemana(progressoDaSemana({ tarefas: [{ done: false }, { done: false }, { done: false }] }));
+  const fotoDepois = fotoDaSemana(progressoDaSemana({ tarefas: [{ done: true }, { done: true }, { done: false }] }));
+  const delta = deltaDaSemana(fotoAntes, fotoDepois);
+  assert.equal(delta.tarefasFeitas, 2);
+  assert.equal(delta.candidaturasAtivas, 0);
+  assert.match(linhaDelta(delta), /\+2 tarefas feitas/);
+  assert.match(fraseDelta(delta), /Você avançou 2 tarefas desde a última segunda/, 'frase natural no título do item');
+
+  // Sem mudança: o digest NÃO mostra “+0” — a linha nem entra no e-mail.
+  assert.equal(linhaDelta(deltaDaSemana(fotoAntes, fotoAntes)), '');
+});
+
+test('Δ da semana: recuo é real e legível (aluno apagou não inventa “+”)', () => {
+  const fotoAntes = fotoDaSemana(progressoDaSemana({ tarefas: [{ done: true }, { done: true }] }));
+  const delta = deltaDaSemana(fotoAntes, fotoDaSemana(progressoDaSemana({ tarefas: [{ done: true }] })));
+  assert.equal(delta.tarefasFeitas, -1);
+  assert.match(linhaDelta(delta), /-1 tarefa feita/);
+  assert.match(fraseDelta(delta), /Você recuou 1 tarefa desde a última segunda/, 'recuo honesto, sem “ avanço” de marketing');
+});
+
+test('Δ da semana: sem tarefa no delta, o título cai para o texto cru (e a nota segue)', () => {
+  const delta = deltaDaSemana(
+    fotoDaSemana(progressoDaSemana({})),
+    fotoDaSemana(progressoDaSemana({ ensaios: [ESSAY('final')] }))
+  );
+  assert.equal(delta.tarefasFeitas, 0);
+  assert.equal(fraseDelta(delta), null, 'sem tarefa não há frase de avanço');
+  const linha = linhaDelta(delta);
+  assert.match(linha, /\+1 redação final/);
+  const html = montarDigestHtml({ progresso: progressoDaSemana({ ensaios: [ESSAY('final')] }), delta });
+  assert.match(html, /\+1 redação final/);
+  assert.match(notaDelta(delta), /A comparação é com o mesmo resumo de uma semana atrás/);
+});
+
+test('Δ da semana: entra no HTML só quando há mudança, com rótulo próprio', () => {
+  const delta = deltaDaSemana(
+    fotoDaSemana(progressoDaSemana({})),
+    fotoDaSemana(progressoDaSemana({ tarefas: [{ done: true }, { done: true }, { done: false }] }))
+  );
+  const html = montarDigestHtml({ progresso: progressoDaSemana({ tarefas: [{ done: true }, { done: false }] }), delta });
+  assert.match(html, /DESDE A ÚLTIMA/);
+  assert.match(html, /Você avançou 2 tarefas desde a última segunda/);
+
+  // primeira semana (delta null): a seção fica só com a foto, sem inventar
+  const htmlSem = montarDigestHtml({ progresso: progressoDaSemana({ tarefas: [{ done: true }] }), delta: null });
+  assert.doesNotMatch(htmlSem, /DESDE A ÚLTIMA/);
+});
+
+test('decidirDigest repassa o Δ e a foto prontos para o cron', () => {
+  const { decidirDigest } = require('../lib/digest.js');
+  const dados = {
+    aplicacoes: [APL('em andamento', 7)],
+    tarefas: [{ done: true }, { done: false }],
+    ensaios: [],
+    atividades: [],
+    favoritos: [],
+  };
+  const fotoAnterior = fotoDaSemana(progressoDaSemana({}));
+  const decisao = decidirDigest(dados, [], { fotoAnterior });
+  assert.equal(decisao.delta.tarefasFeitas, 1);
+  assert.equal(decisao.fotoHoje.tarefasFeitas, 1);
+  assert.equal(decisao.vale, true, 'com Δ real e prazo, vale enviar');
+});
+
+// ---- alertasDeFavoritos ---------------------------------------------------------
+
+const OPP = (id, dias, nome = 'Programa X') =>
+  dias == null
+    ? { id, name: nome, type: 'program', application_deadline: null }
+    : { id, name: nome, type: 'program', application_deadline: dataFutura(dias) };
+
+test('alertasDeFavoritos: dispara só em D-7/D-2 e só para o que o aluno guardou', () => {
+  const opps = [
+    OPP(1, 7, 'D7'),
+    OPP(2, 2, 'D2'),
+    OPP(3, 3, 'D3 - fora'),
+    OPP(4, null, 'SEM DATA'),
+    OPP(5, -1, 'ENCERRADA'),
+  ];
+  const favoritos = [1, 2, 3, 4, 5]; // tudo favoritado; o sem alvo é o sistema que corta
+  const lista = alertasDeFavoritos(opps, favoritos);
+  assert.deepEqual(
+    lista.map((a) => [a.university, a.dias]),
+    [
+      ['D2', 2],
+      ['D7', 7],
+    ]
+  );
+  assert.match(lista[0].link, /\/oportunidades$/, 'favorito aponta para o radar, não para aplicações');
+});
+
+test('alertasDeFavoritos: não favoritar = não alertar, mesmo preparado pelo cron', () => {
+  const lista = alertasDeFavoritos([OPP(1, 7, 'Nunca favoritado')], []);
+  assert.equal(lista.length, 0);
+});
+
+test('alertasDeFavoritos: candidatura ATIVA com mesmo nome reserva o aviso (sem e-mail duplo)', () => {
+  const opps = [OPP(1, 2, 'Yale University')];
+  const comReserva = alertasDeFavoritos(opps, [1], { nomesReservados: ['  Yale University '] });
+  assert.equal(comReserva.length, 0, 'mesma universidade em aberto já tem alerta próprio');
+  // candidatura FINALIZADA não reserva: favorito volta a receber o alerta
+  const finalizadaNaoReserva = alertasDeFavoritos(opps, [1], { nomesReservados: [] });
+  assert.equal(finalizadaNaoReserva.length, 1);
+});
 
 test('montarDigestHtml: prazos, progresso e catálogo viram seções com numeração', () => {
   const html = montarDigestHtml({

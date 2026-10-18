@@ -540,6 +540,23 @@ export default function Redacoes() {
                 />
               </div>
 
+              {/* Guia de estrutura opcional (feedback 15/10): fechado por padrão,
+                  não atrapalha quem já sabe o que escrever. */}
+              <details className="guia-estrutura" onClick={(e) => e.stopPropagation()}>
+                <summary>Ferramentas de escrita · estrutura sugerida</summary>
+                <div className="guia-corpo">
+                  <p>Um ensaio de admissão quase sempre caminha assim:</p>
+                  <ol>
+                    <li><strong>Gancho</strong> — uma cena ou pergunta específica que seja SUA (nada de “Since I was a child”).</li>
+                    <li><strong>Contexto</strong> — o que estava em jogo, em 2 a 3 frases.</li>
+                    <li><strong>Desenvolvimento</strong> — o que você fez, como pensou, o que custou.</li>
+                    <li><strong>Virada/mudança</strong> — como você (ou sua visão do problema) mudou.</li>
+                    <li><strong>Ponte para o futuro</strong> — 1 frase ligando isso ao que você quer levar para a faculdade.</li>
+                  </ol>
+                  <p className="guia-exemplo">Regra de bolso: mostrar &gt; contar. Troque “sou apaixonado por biologia” por a cena em que você passou o domingo inteiro no mangue coletando amostras.</p>
+                </div>
+              </details>
+
               <div className="caixa-editor" onClick={(e) => e.stopPropagation()}>
                 <textarea
                   key={ensaio.body === undefined ? 'x' : ensaio.body}
@@ -730,6 +747,14 @@ const CSS = `
 .caixa-prompt{ margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; }
 .caixa-prompt input[type="text"]{ flex:1; min-width:220px; border:0; border-bottom:1px solid var(--hairline); background:transparent; padding:9px 2px; font:italic 14px/1.5 var(--corpo); color:var(--tinta-sec); }
 .caixa-prompt .limite{ width:110px; border:1px solid var(--hairline); border-radius:3px; padding:8px 10px; font:12px var(--mono); background:var(--papel); }
+.guia-estrutura{ margin-top:14px; }
+.guia-estrutura summary{ cursor:pointer; list-style:none; font:600 11px/1 var(--sans); text-transform:uppercase; letter-spacing:.14em; color:var(--tinta-sec); text-decoration:underline; text-underline-offset:4px; text-decoration-thickness:1px; }
+.guia-estrutura summary::-webkit-details-marker{ display:none; }
+.guia-estrutura summary:hover{ color:var(--tinta); }
+.guia-corpo{ margin-top:10px; padding:14px 16px; border:1px solid var(--hairline); border-radius:4px; background:var(--papel); font-size:15px; line-height:1.7; color:var(--tinta-sec); }
+.guia-corpo p{ margin:0; }
+.guia-corpo ol{ margin:8px 0 0; padding-left:20px; display:flex; flex-direction:column; gap:4px; }
+.guia-exemplo{ margin-top:8px !important; font-style:italic; }
 .caixa-editor{ margin-top:16px; }
 .caixa-editor textarea{ width:100%; min-height:260px; resize:vertical; border:1px solid var(--hairline); border-radius:4px; background:var(--papel); padding:18px 20px; font:400 16px/1.8 var(--corpo); color:var(--tinta); }
 .caixa-editor textarea:focus{ outline:none; border-color:var(--lacre); box-shadow:0 1px 0 0 var(--lacre); }
