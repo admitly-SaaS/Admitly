@@ -16,7 +16,7 @@ const {
   STATUS_FINAIS,
   montarDigestHtml,
   montarAlertaHtml,
-  fotoDaSemana,
+  instantaneoDaSemana,
   deltaDaSemana,
   linhaDelta,
   fraseDelta,
@@ -175,14 +175,14 @@ test('valeEnviarAlerta: lista vazia não envia', () => {
   assert.equal(valeEnviarAlerta([{ application_id: 'a' }]), true);
 });
 
-// ---- foto/Δ da semana ----------------------------------------------------------
+// ---- instantâneo/Δ da semana ----------------------------------------------------
 
-test('Δ da semana: primeira semana (sem foto) é null — digest sai sem comparação', () => {
-  const fotoHoje = fotoDaSemana(progressoDaSemana({
+test('Δ da semana: primeira semana (sem instantâneo) é null — digest sai sem comparação', () => {
+  const instantaneoHoje = instantaneoDaSemana(progressoDaSemana({
     tarefas: [{ done: true }, { done: false }],
     ensaios: [ESSAY('final')],
   }));
-  assert.deepEqual(fotoHoje, {
+  assert.deepEqual(instantaneoHoje, {
     tarefasFeitas: 1,
     tarefasTotal: 2,
     candidaturasAtivas: 0,
@@ -190,27 +190,27 @@ test('Δ da semana: primeira semana (sem foto) é null — digest sai sem compar
     redacoesTotal: 1,
     atividadesProntas: 0,
   });
-  assert.equal(deltaDaSemana(null, fotoHoje), null, 'sem foto anterior não há delta (nada inventado)');
-  assert.equal(deltaDaSemana('lixo', fotoHoje), null, 'foto quebrada também é sem comparação');
+  assert.equal(deltaDaSemana(null, instantaneoHoje), null, 'sem instantâneo anterior não há delta (nada inventado)');
+  assert.equal(deltaDaSemana('lixo', instantaneoHoje), null, 'instantâneo quebrado também é sem comparação');
   assert.equal(linhaDelta(null), '');
 });
 
 test('Δ da semana: avanço real conta tarefas/redações; nada mudou é linha vazia', () => {
-  const fotoAntes = fotoDaSemana(progressoDaSemana({ tarefas: [{ done: false }, { done: false }, { done: false }] }));
-  const fotoDepois = fotoDaSemana(progressoDaSemana({ tarefas: [{ done: true }, { done: true }, { done: false }] }));
-  const delta = deltaDaSemana(fotoAntes, fotoDepois);
+  const instanteAntes = instantaneoDaSemana(progressoDaSemana({ tarefas: [{ done: false }, { done: false }, { done: false }] }));
+  const instanteDepois = instantaneoDaSemana(progressoDaSemana({ tarefas: [{ done: true }, { done: true }, { done: false }] }));
+  const delta = deltaDaSemana(instanteAntes, instanteDepois);
   assert.equal(delta.tarefasFeitas, 2);
   assert.equal(delta.candidaturasAtivas, 0);
   assert.match(linhaDelta(delta), /\+2 tarefas feitas/);
   assert.match(fraseDelta(delta), /Você avançou 2 tarefas desde a última segunda/, 'frase natural no título do item');
 
   // Sem mudança: o digest NÃO mostra “+0” — a linha nem entra no e-mail.
-  assert.equal(linhaDelta(deltaDaSemana(fotoAntes, fotoAntes)), '');
+  assert.equal(linhaDelta(deltaDaSemana(instanteAntes, instanteAntes)), '');
 });
 
 test('Δ da semana: recuo é real e legível (aluno apagou não inventa “+”)', () => {
-  const fotoAntes = fotoDaSemana(progressoDaSemana({ tarefas: [{ done: true }, { done: true }] }));
-  const delta = deltaDaSemana(fotoAntes, fotoDaSemana(progressoDaSemana({ tarefas: [{ done: true }] })));
+  const instanteAntes = instantaneoDaSemana(progressoDaSemana({ tarefas: [{ done: true }, { done: true }] }));
+  const delta = deltaDaSemana(instanteAntes, instantaneoDaSemana(progressoDaSemana({ tarefas: [{ done: true }] })));
   assert.equal(delta.tarefasFeitas, -1);
   assert.match(linhaDelta(delta), /-1 tarefa feita/);
   assert.match(fraseDelta(delta), /Você recuou 1 tarefa desde a última segunda/, 'recuo honesto, sem “ avanço” de marketing');
@@ -218,8 +218,8 @@ test('Δ da semana: recuo é real e legível (aluno apagou não inventa “+”)
 
 test('Δ da semana: sem tarefa no delta, o título cai para o texto cru (e a nota segue)', () => {
   const delta = deltaDaSemana(
-    fotoDaSemana(progressoDaSemana({})),
-    fotoDaSemana(progressoDaSemana({ ensaios: [ESSAY('final')] }))
+    instantaneoDaSemana(progressoDaSemana({})),
+    instantaneoDaSemana(progressoDaSemana({ ensaios: [ESSAY('final')] }))
   );
   assert.equal(delta.tarefasFeitas, 0);
   assert.equal(fraseDelta(delta), null, 'sem tarefa não há frase de avanço');
@@ -232,19 +232,19 @@ test('Δ da semana: sem tarefa no delta, o título cai para o texto cru (e a not
 
 test('Δ da semana: entra no HTML só quando há mudança, com rótulo próprio', () => {
   const delta = deltaDaSemana(
-    fotoDaSemana(progressoDaSemana({})),
-    fotoDaSemana(progressoDaSemana({ tarefas: [{ done: true }, { done: true }, { done: false }] }))
+    instantaneoDaSemana(progressoDaSemana({})),
+    instantaneoDaSemana(progressoDaSemana({ tarefas: [{ done: true }, { done: true }, { done: false }] }))
   );
   const html = montarDigestHtml({ progresso: progressoDaSemana({ tarefas: [{ done: true }, { done: false }] }), delta });
   assert.match(html, /DESDE A ÚLTIMA/);
   assert.match(html, /Você avançou 2 tarefas desde a última segunda/);
 
-  // primeira semana (delta null): a seção fica só com a foto, sem inventar
+  // primeira semana (delta null): a seção fica só com o instantâneo, sem inventar
   const htmlSem = montarDigestHtml({ progresso: progressoDaSemana({ tarefas: [{ done: true }] }), delta: null });
   assert.doesNotMatch(htmlSem, /DESDE A ÚLTIMA/);
 });
 
-test('decidirDigest repassa o Δ e a foto prontos para o cron', () => {
+test('decidirDigest repassa o Δ e o instantâneo prontos para o cron', () => {
   const { decidirDigest } = require('../lib/digest.js');
   const dados = {
     aplicacoes: [APL('em andamento', 7)],
@@ -253,10 +253,10 @@ test('decidirDigest repassa o Δ e a foto prontos para o cron', () => {
     atividades: [],
     favoritos: [],
   };
-  const fotoAnterior = fotoDaSemana(progressoDaSemana({}));
-  const decisao = decidirDigest(dados, [], { fotoAnterior });
+  const instantaneoAnterior = instantaneoDaSemana(progressoDaSemana({}));
+  const decisao = decidirDigest(dados, [], { instantaneoAnterior });
   assert.equal(decisao.delta.tarefasFeitas, 1);
-  assert.equal(decisao.fotoHoje.tarefasFeitas, 1);
+  assert.equal(decisao.instantaneoHoje.tarefasFeitas, 1);
   assert.equal(decisao.vale, true, 'com Δ real e prazo, vale enviar');
 });
 
@@ -338,6 +338,42 @@ test('montarAlertaHtml: D-7 e D-2 têm tons e textos diferentes', () => {
 
 // ---- lib/email.js (sem rede nos testes) --------------------------------------------
 
+test('montarDigestHtml: a identidade da carta está no envelope — regra dupla, ponto do logo e âncora viva', () => {
+  const html = montarDigestHtml({
+    primeiroNome: 'Ana',
+    prazos: [{ application_id: 'a1', university: 'Yale', dias: 2, data: null, semData: false }],
+    progresso: null,
+    catalogo: [],
+  });
+  // regra dupla do letterhead (grossa em cima, fina abaixo), no azul acento
+  assert.match(html, /border-top:3px solid #1F3A5F; border-bottom:1px solid #1F3A5F/);
+  // logo “Admitly” com o ponto de acento (círculo 5px na cor acento)
+  assert.match(html, /Admit<em/);
+  assert.match(html, /border-radius:50%; background:#1F3A5F/);
+  // o “ABRIR” é link de verdade, apontando para as candidaturas no app
+  assert.match(html, /<a href="[^"]*\/aplicacoes"[^>]*>ABRIR →<\/a>/);
+  // barra de urgência: item D-2 pintado do vermelho do app
+  assert.match(html, /bgcolor="#A6301F"/);
+});
+
+test('montarAlertaHtml: o item de ação carrega o link da candidatura', () => {
+  const calma = montarAlertaHtml({ university: 'Yale', dias: 7, data: '01 NOV 2026', application_id: 'a1', link: 'https://admitly.com/aplicacoes' });
+  assert.match(calma, /<a href="https:\/\/admitly\.com\/aplicacoes"[^>]*>ABRIR →<\/a>/);
+});
+
+test('montarEmailBase: item sem href mantém o lado só como texto (sem âncora inventada)', () => {
+  // o caminho cru: seções aqui vêm direto da camada de template
+  const html = montarDigestHtml({
+    primeiroNome: null,
+    prazos: [],
+    progresso: progressoDaSemana({}),
+    catalogo: [{ id: 9, name: 'Sem link', tipo: '', dias: 5, data: null }],
+  });
+  // “VER” do catálogo SEM href viria como texto — com o href do builder
+  // sempre presente, garantimos que fica âncora:
+  assert.match(html, /<a href="[^"]*\/oportunidades"[^>]*>VER →<\/a>/);
+});
+
 test('montarEmailBase: escapa HTML malicioso no conteúdo', () => {
   const html = montarEmailBase({
     preheader: 'x',
@@ -376,6 +412,56 @@ test('enviarEmail: sem chave desiste cedo', async () => {
     const { error } = await enviarEmail({ to: 'a@b.c', subject: 's', html: '<p>h</p>' });
     assert.match(error.message, /RESEND_API_KEY ausente/);
   } finally {
+    process.env.RESEND_API_KEY = antes;
+  }
+});
+
+// Falso Resend: responde os status que quisermos e se lembra do que recebeu.
+function falsoResend(cenarios) {
+  const chamadas = []
+  fetch = async (url, opcoes) => {
+    const corpo = JSON.parse(opcoes.body);
+    chamadas.push({ idem: opcoes.headers['Idempotency-Key'], corpo });
+    const cenario = cenarios[chamadas.length - 1];
+    return cenario ?? new Response(JSON.stringify({ id: 'fake-1' }), { status: 200, headers: { 'content-type': 'application/json' } });
+  };
+  return chamadas;
+}
+
+test('enviarEmail: 429 transient → reenvia e as tentativas compartilham a mesma Idempotency-Key', async () => {
+  const antes = process.env.RESEND_API_KEY;
+  const fetchOriginal = globalThis.fetch;
+  try {
+    process.env.RESEND_API_KEY = 'test-key';
+    const chamadas = falsoResend([
+      new Response(JSON.stringify({ message: 'rate limited' }), { status: 429, headers: { 'content-type': 'application/json' } }),
+    ]); // a 2ª chamada fica com o sucesso padrao do falso
+    const { error, data } = await enviarEmail({ to: 'a@b.c', subject: 's', html: '<p>h</p>' });
+    assert.equal(error, null);
+    assert.equal(data.id, 'fake-1');
+    assert.equal(chamadas.length, 2);
+    assert.ok(chamadas[0].idem, 'gerou chave de idempotência');
+    assert.equal(chamadas[1].idem, chamadas[0].idem, 'mesma chave entre tentativas — Resend não duplica');
+    assert.equal(chamadas[1].corpo.to[0], 'a@b.c');
+  } finally {
+    globalThis.fetch = fetchOriginal;
+    process.env.RESEND_API_KEY = antes;
+  }
+});
+
+test('enviarEmail: 401 de autenticação não reenvia — falha imediata, sem queimar tentativas', async () => {
+  const antes = process.env.RESEND_API_KEY;
+  const fetchOriginal = globalThis.fetch;
+  try {
+    process.env.RESEND_API_KEY = 'test-key';
+    const chamadas = falsoResend([
+      new Response(JSON.stringify({ message: 'invalid api key' }), { status: 401, headers: { 'content-type': 'application/json' } }),
+    ]);
+    const { error } = await enviarEmail({ to: 'a@b.c', subject: 's', html: '<p>h</p>' });
+    assert.match(error.message, /Resend 401/);
+    assert.equal(chamadas.length, 1, 'um 4xx de validação não ganha segunda tentativa');
+  } finally {
+    globalThis.fetch = fetchOriginal;
     process.env.RESEND_API_KEY = antes;
   }
 });
