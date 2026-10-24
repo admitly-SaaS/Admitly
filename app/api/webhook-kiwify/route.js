@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { timingSafeEqual } from 'node:crypto'
+import { avisarFalha } from '../../../lib/alerta-ops.js'
 
 // Webhook do checkout (Kiwify). O aluno paga lá; aqui o acesso é liberado ou
 // revogado. O token chega na query string (?token=...), como a Kiwify envia.
@@ -86,6 +87,14 @@ export async function POST(request) {
   const tokenRecebido = new URL(request.url).searchParams.get('token')
 
   if (!tokenEsperado || !tokenValido(tokenRecebido, tokenEsperado)) {
+    // Chave fixa no throttle: um ataque de tokens errados vira no máximo um
+    // alerta a cada 30 min, não uma enchente na caixa do dono.
+    await avisarFalha('webhook-token-invalido', {
+      assunto: 'Webhook Kiwify recusou token inválido',
+      resumo:
+        'Um POST chegou no /api/webhook-kiwify com token errado (401 devolvido). Pode ser ataque automatizado — ou a Kiwify perdendo o token configurado dela, o que bloquearia pagamentos futuros.',
+      detalhes: [{ rotulo: 'Rota', titulo: '/api/webhook-kiwify?token=…', nota: 'COMPARE em tempo constante, nada gravado, evento descartado.' }],
+    })
     return Response.json({ erro: 'token inválido' }, { status: 401 })
   }
 
@@ -106,19 +115,50 @@ export async function POST(request) {
   const usuario = await acharUsuarioPorEmail(email)
 
   if (!usuario) {
-    // 404 faz a Kiwify reenviar: o aluno pode ter criado a conta depois do pagamento.
+    // 404 faz a Kiwify reenviar: o aluno pode ter criado a conta depois do
+    // pagamento. ALERTA mesmo assim: um cliente pagou e o acesso NÃO saiu —
+    // o dono precisa conferir que o reenvio resolveu (chave por e-mail, então
+    // pagamento diferente com o mesmo destino ainda avisa).
+    await avisarFalha(`webhook-sem-conta:${String(email).toLowerCase()}`, {
+      assunto: `Pagamento da Kiwify sem conta no app — ${email}`,
+      resumo:
+        'A Kiwify reportou um pagamento, mas nenhum usuário do Supabase tem esse e-mail (404 devolvido; ela reenvia sozinha). Dica: confira se o aluno criou a conta com ESTE e-mail — se criou menor, o pagamento ficou preso.',
+      detalhes: [{ rotulo: 'Cliente', titulo: email, nota: `status da ordem: ${status || '(vazio)'}` }],
+    })
     return Response.json({ erro: 'usuário não encontrado' }, { status: 404 })
   }
 
   if (PAGO.test(status)) {
     const erro = await definirAssinatura(usuario.id, 'active')
-    if (erro) return Response.json({ erro: 'falha ao salvar assinatura' }, { status: 500 })
+    if (erro) {
+      await avisarFalha('webhook-gravar', {
+        assunto: `Kiwify pagou e a gravação da assinatura falhou — ${email}`,
+        resumo:
+          'O pagamento entrou e a escrita no banco falhou (500 devolvido; a Kiwify reenvia o evento). Confira se o acesso saiu quando ela reenviar — senão, o cliente pagou sem receber.',
+        detalhes: [
+          { rotulo: 'Cliente', titulo: email, nota: `status da ordem: ${status}` },
+          { rotulo: 'Erro do banco', titulo: erro.message || String(erro) },
+        ],
+      })
+      return Response.json({ erro: 'falha ao salvar assinatura' }, { status: 500 })
+    }
     return Response.json({ recebido: true, acesso: 'liberado' })
   }
 
   if (REVOGADO.test(status)) {
     const erro = await definirAssinatura(usuario.id, 'inactive')
-    if (erro) return Response.json({ erro: 'falha ao revogar assinatura' }, { status: 500 })
+    if (erro) {
+      await avisarFalha('webhook-gravar', {
+        assunto: `Cancelamento/reembolso falhou em gravar — ${email}`,
+        resumo:
+          'A Kiwify reportou revogação (reembolso/chargeback/cancelamento) e a escrita no banco falhou (500; ela reenvia). Enquanto não gravar, o aluno que reembolsou segue COM acesso.',
+        detalhes: [
+          { rotulo: 'Cliente', titulo: email, nota: `status da ordem: ${status}` },
+          { rotulo: 'Erro do banco', titulo: erro.message || String(erro) },
+        ],
+      })
+      return Response.json({ erro: 'falha ao revogar assinatura' }, { status: 500 })
+    }
     return Response.json({ recebido: true, acesso: 'revogado' })
   }
 
