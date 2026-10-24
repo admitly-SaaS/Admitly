@@ -9,10 +9,31 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState('')
+  // Consentimento LGPD: checkbox DE-marcado (art. 8º — silúncio não é aceite);
+  // pedido só aparece no fluxo de CRIAR conta. O registro (texto, versão,
+  // data/hora) vai para o user_metadata — é a prova do art. 8º, § 2º.
+  const [aceitou, setAceitou] = useState(false)
 
   const handleSignUp = async () => {
     setMessage('')
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    if (!aceitou) {
+      setMessage('Para criar a conta, é preciso aceitar os Termos e a Política de Privacidade (caixa acima).')
+      return
+    }
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          consentimento_lgpd: {
+            termos: 'v1',
+            privacidade: 'v1',
+            em: new Date().toISOString(),
+            acao: 'checkbox_cadastro',
+          },
+        },
+      },
+    })
     if (error) {
       setMessage(error.message)
     } else if (!data.session) {
@@ -51,7 +72,7 @@ export default function Login() {
       }
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: window.location.origin + '/welcome' },
+        options: { redirectTo: window.location.origin + '/auth/callback' },
       })
       if (error) {
         setMessage('Login com Google indisponível. (' + error.message + ')')
@@ -192,6 +213,21 @@ export default function Login() {
             <button type="button" className="btn-link" onClick={handleEsqueci}>Esqueci a senha</button>
           </div>
 
+          {/* ===== consentimento LGPD (só para criar conta) ===== */}
+          <label className="consentimento">
+            <input
+              type="checkbox"
+              checked={aceitou}
+              onChange={(e) => setAceitou(e.target.checked)}
+            />
+            <span>
+              <strong>Necessário para criar conta:</strong> li e aceito os{' '}
+              <a href="/termos" target="_blank" rel="noopener noreferrer">Termos de Serviço</a> e a{' '}
+              <a href="/privacidade" target="_blank" rel="noopener noreferrer">Política de Privacidade</a>;
+              tenho 16 anos ou mais (menos de 16: a conta deve ser criada pelo responsável).
+            </span>
+          </label>
+
           {message && (
             <p className={`mensagem ${msgBoa ? 'mensagem--ok' : 'mensagem--erro'}`} role="status">
               {message}
@@ -289,6 +325,12 @@ const CSS = `
 .divisor::before, .divisor::after{ content:""; flex:1; border-top:1px solid var(--hairline); }
 
 .links{ display:flex; justify-content:space-between; align-items:center; }
+.consentimento{
+  display:flex; gap:10px; align-items:flex-start;
+  font:400 12.5px/1.6 var(--sans); color:var(--tinta-sec);
+}
+.consentimento input{ margin-top:2px; accent-color:var(--acento); }
+.consentimento a{ color:var(--acento); text-decoration:underline; text-underline-offset:2px; }
 .btn-link{
   background:none; border:0; cursor:pointer; padding:4px 2px;
   font:600 15px/1 var(--sans); color:var(--acento);
