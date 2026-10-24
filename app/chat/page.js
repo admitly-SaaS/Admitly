@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useReducer, useRef, useSyncExternalStore } from 'react'
+import { useState, useEffect, useCallback, useReducer, useRef, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 import { temAssinaturaAtiva } from '../../lib/subscriptions.js'
@@ -24,7 +24,29 @@ const PASSOS_ONBOARDING = [
 
 // Chips clicáveis: linhas "TAREFA: ...", "UNIVERSIDADE: ..." e
 // "SUGESTÃO_REDAÇÃO: id | Nome" (gerada pelo /api/chat) viram ações.
-function renderizarMensagem(texto, aoAdicionarTarefa, aoAdicionarUniversidade, aoCriarRascunho, rascunhosCriados) {
+// O chip do rascunho é um componente próprio: componente ≠ render inline, então
+// o lint do React Compiler encerra o trace nele e não acusa acesso a ref
+// através do callback recebido.
+function ChipRascunho({ applicationId, nome, criado, aoCriarRascunho }) {
+  return (
+    <div className="chip-linha chip-linha--redacao">
+      <span className="chip-univ-nome">Redação de {nome}</span>
+      <button
+        type="button"
+        className="chip-btn chip-btn--primario"
+        disabled={criado}
+        onClick={() => aoCriarRascunho(applicationId, nome)}
+      >
+        {criado ? 'Rascunho criado' : '+ Criar rascunho'}
+      </button>
+    </div>
+  )
+}
+
+// Componente (não helper invocado durante o render): o compilador do React
+// exige que a função que lê a ref chegue ao DOM por uma borda de componente —
+// passá-la como prop de <MensagemAdmitly /> encerra o trace nele.
+function MensagemAdmitly({ texto, aoAdicionarTarefa, aoAdicionarUniversidade, aoCriarRascunho, rascunhosCriados }) {
   const linhas = texto.split('\n')
   return linhas.map((linha, i) => {
     if (linha.startsWith('TAREFA: ')) {
@@ -40,19 +62,14 @@ function renderizarMensagem(texto, aoAdicionarTarefa, aoAdicionarUniversidade, a
     }
     if (linha.startsWith('SUGESTÃO_REDAÇÃO: ')) {
       const [id, nome] = linha.replace('SUGESTÃO_REDAÇÃO: ', '').split(' | ')
-      const criado = rascunhosCriados.includes(id)
       return (
-        <div key={i} className="chip-linha chip-linha--redacao">
-          <span className="chip-univ-nome">Redação de {nome}</span>
-          <button
-            type="button"
-            className="chip-btn chip-btn--primario"
-            disabled={criado}
-            onClick={() => aoCriarRascunho(id, nome)}
-          >
-            {criado ? 'Rascunho criado' : '+ Criar rascunho'}
-          </button>
-        </div>
+        <ChipRascunho
+          key={`chip-red-${i}`}
+          applicationId={id}
+          nome={nome}
+          criado={rascunhosCriados.includes(id)}
+          aoCriarRascunho={aoCriarRascunho}
+        />
       )
     }
     if (linha.startsWith('UNIVERSIDADE: ')) {
@@ -92,6 +109,10 @@ export default function Chat() {
   const [menuAberto, setMenuAberto] = useState(false)
   const [passoAtual, setPassoAtual] = useState(0)
   const [rascunhosCriados, setRascunhosCriados] = useState([])
+  // Fonte de verdade síncrona dos rascunhos criados: o state sozinho fica
+  // defasado entre render e await — dois cliques rápidos passavam pelo check
+  // e criavam duas redações da mesma candidatura.
+  const rascunhosRef = useRef(new Set())
   const [missoes, setMissoes] = useState([])
   const fimDasMensagens = useRef(null)
 
@@ -124,7 +145,7 @@ export default function Chat() {
         await Promise.all([
           supabase.from('applications').select('id, university, status, deadline').eq('user_id', user.id),
           supabase.from('tasks').select('id, application_id, done').eq('user_id', user.id),
-          supabase.from('essays').select('id, title, status').eq('user_id', user.id),
+          supabase.from('essays').select('id, title, status, application_id').eq('user_id', user.id),
           supabase.from('extracurriculares').select('id, nome, status').eq('user_id', user.id).then(
             (r) => r,
             () => ({ data: [] }) // aba pode ainda não estar migrada; degrada sem quebrar
@@ -133,6 +154,15 @@ export default function Chat() {
       ).map((r) => r.data || [])
 
       setMissoes(gerarMissoes({ formulario: user.user_metadata?.perfil_academico || {}, aplicacoes: aps, tarefas: tks, ensaios: ens, atividades: ats }))
+
+      // Semeia o ref com candidaturas que já têm rascunho: linhas antigas da
+      // conversa com "SUGESTÃO_REDAÇÃO" reaparecem no reload desabilitadas,
+      // em vez de oferecer criação duplicada. Chave SEMPRE string — o id que
+      // chega do texto do chip é string e o do banco chega número.
+      for (const e of ens) {
+        if (e.application_id != null) rascunhosRef.current.add(String(e.application_id))
+      }
+      if (ens.some((e) => e.application_id != null)) setRascunhosCriados([...rascunhosRef.current])
 
       const ativa = await temAssinaturaAtiva(supabase, user.id)
 
@@ -222,17 +252,23 @@ export default function Chat() {
   }
 
   // Botão do chip "SUGESTÃO_REDAÇÃO": cria o rascunho já vinculado à candidatura.
-  // Antes checa se já não existe (ex.: clicou antes de recarregar a página) —
-  // a linha fica gravada na conversa, e o botão volta por ela após o reload.
-  const criarRascunhoRedacao = async (applicationId, nome) => {
-    if (!userId || rascunhosCriados.includes(applicationId)) return
+  // Dois guardas: (1) ref síncrono tranca o segundo clique antes de qualquer
+  // await — dois toques rápidos criavam duas redações; (2) antes de inserir,
+  // confere no banco se a candidatura já tem rascunho — a linha fica gravada
+  // na conversa e o chip volta por ela após o reload (o load inicial semeia o
+  // ref com as candidaturas que já têm ensaio).
+  const criarRascunhoRedacao = useCallback(async (applicationId, nome) => {
+    const chaveId = String(applicationId)
+    if (!userId || rascunhosRef.current.has(chaveId)) return
+    rascunhosRef.current.add(chaveId)
+    setRascunhosCriados([...rascunhosRef.current])
+
     const { data: existente } = await supabase
       .from('essays')
       .select('id')
       .eq('application_id', applicationId)
       .maybeSingle()
     if (existente) {
-      setRascunhosCriados((prev) => [...prev, applicationId])
       setAviso(`Já existe um rascunho de ${nome} na aba Redações`)
     } else {
       const { error } = await criarEnsaioParaUsuario(userId, {
@@ -241,14 +277,16 @@ export default function Chat() {
         status: 'ideia',
       }, supabase)
       if (error) {
+        // falhou: devolve o chip para o estado clicável — dá para tentar de novo
+        rascunhosRef.current.delete(chaveId)
+        setRascunhosCriados([...rascunhosRef.current])
         setAviso('Não foi possível criar o rascunho agora.')
       } else {
-        setRascunhosCriados((prev) => [...prev, applicationId])
         setAviso(`Rascunho de ${nome} criado — veja na aba Redações`)
       }
     }
     setTimeout(() => setAviso(''), 2500)
-  }
+  }, [userId])
 
   const enviarMensagem = async () => {
     if (!input.trim() || !conversationId || carregando) return
@@ -461,7 +499,13 @@ export default function Chat() {
                 <div className="balao-usuario">{msg.texto}</div>
               ) : (
                 <div className="corpo-admitly">
-                  {renderizarMensagem(msg.texto, adicionarTarefa, adicionarUniversidade, criarRascunhoRedacao, rascunhosCriados)}
+                  <MensagemAdmitly
+                    texto={msg.texto}
+                    aoAdicionarTarefa={adicionarTarefa}
+                    aoAdicionarUniversidade={adicionarUniversidade}
+                    aoCriarRascunho={criarRascunhoRedacao}
+                    rascunhosCriados={rascunhosCriados}
+                  />
                 </div>
               )}
             </div>

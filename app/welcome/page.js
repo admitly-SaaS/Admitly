@@ -91,9 +91,13 @@ export default function Welcome() {
   // Datas, nome e número do envelope só no cliente (evita erro de hidratação).
   // A carta é para quem tem conta: sem sessão, volta pro login.
   useEffect(() => {
-    try {
-      setHoje(new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }))
-    } catch { /* ignore */ }
+    // Microtask: o setState sai do corpo síncrono do effect (evita render em
+    // cascata dentro da execução própria do efeito) e continua client-only.
+    queueMicrotask(() => {
+      try {
+        setHoje(new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }))
+      } catch { /* ignore */ }
+    })
 
     supabase.auth.getUser().then(({ data }) => {
       const user = data && data.user

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase as supabaseClient } from '@/lib/supabase';
 import { addFavoriteForUser, removeFavoriteForUser } from '@/lib/favorites.js';
 import { gravarDescarte } from '@/lib/radar-descartes.js';
 import { prazoStatus, formatarData } from '@/lib/prazos.js';
@@ -14,8 +14,8 @@ import { prazoStatus, formatarData } from '@/lib/prazos.js';
 // O CSS vive em app/oportunidades/page.js (.radar-*, reuso de .btn-*, .dot,
 // .grifo), como já acontece com o OppCard (.cartao-*).
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Client compartilhado do app: um por clique disparava o warning de
+// GoTrueClient múltiplo (mesma storage key) entre clientes.
 
 function RotuloPrazo({ opp }) {
   const status = prazoStatus(opp);
@@ -44,15 +44,13 @@ export default function RadarCard({ item, userId, onResolvido, onFavoriteChange 
     setTimeout(() => setAviso(null), 5000);
   };
 
-  const makeClient = () => createClient(supabaseUrl, supabaseAnonKey);
-
-  const opp = item.opp;
+    const opp = item.opp;
   const porques = (opp.compatibility?.reasons || []).slice(0, 2);
 
   async function salvar() {
     setOcupado(true);
     try {
-      const { error } = await addFavoriteForUser(userId, opp.id, makeClient());
+      const { error } = await addFavoriteForUser(userId, opp.id, supabaseClient);
       if (error) throw error;
       onFavoriteChange?.(opp.id, true);
       mostrar('Salvo nos favoritos.');
@@ -71,7 +69,7 @@ export default function RadarCard({ item, userId, onResolvido, onFavoriteChange 
     setOcupado(true);
     try {
       if (salvo || item.favorito) {
-        const { error } = await removeFavoriteForUser(userId, opp.id, makeClient());
+        const { error } = await removeFavoriteForUser(userId, opp.id, supabaseClient);
         if (error) throw error;
         onFavoriteChange?.(opp.id, false);
       }
@@ -81,7 +79,7 @@ export default function RadarCard({ item, userId, onResolvido, onFavoriteChange 
     // A reação persiste para o matching aprender com o que o aluno rejeitou.
     // Falha é silenciosa (migration pendente ou rede): resolver a novidade
     // NUNCA depende de gravar o sigilo — o toque do usuário vale mais.
-    gravarDescarte(userId, opp.id, 'descartado', makeClient()).catch(() => {});
+    gravarDescarte(userId, opp.id, 'descartado', supabaseClient).catch(() => {});
     setOcupado(false);
     onResolvido?.(item, 'descartado');
   }
@@ -89,7 +87,7 @@ export default function RadarCard({ item, userId, onResolvido, onFavoriteChange 
   async function jaFiz() {
     // "Já fiz": o aluno confirma que já participou/se inscreveu — também é
     // sinal para o matching (não recomendar de novo o que já foi feito).
-    gravarDescarte(userId, opp.id, 'feito', makeClient()).catch(() => {});
+    gravarDescarte(userId, opp.id, 'feito', supabaseClient).catch(() => {});
     setOcupado(false);
     onResolvido?.(item, 'feito');
   }

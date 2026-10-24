@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase as supabaseClient } from '@/lib/supabase';
 import { addFavoriteForUser, removeFavoriteForUser } from '@/lib/favorites.js';
 import { createApplicationForUser } from '@/lib/applications.js';
 import { prazoStatus, formatarData } from '@/lib/prazos.js';
@@ -10,8 +10,8 @@ import { prazoStatus, formatarData } from '@/lib/prazos.js';
 // (.cartao, .cartao-*), porque este componente só é usado lá e assim as regras
 // ficam num só lugar em vez de se repetirem em cada cartão renderizado.
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Client compartilhado do app: criar um por clique disparava o warning de
+// GoTrueClient múltiplo (mesma storage key) e era fadado a efeitos colaterais.
 
 const SIMBOLOS_MOEDA = { USD: 'US$', BRL: 'R$', EUR: '€', GBP: '£', CAD: 'CA$', AUD: 'A$' };
 
@@ -96,8 +96,6 @@ export default function OppCard({ opp, isFavorite, userId, onFavoriteChange }) {
     setTimeout(() => setAviso(null), 5000);
   };
 
-  const makeClient = () => createClient(supabaseUrl, supabaseAnonKey);
-
   async function handleSave(e) {
     e.stopPropagation();
     setOcupado(true);
@@ -109,11 +107,11 @@ export default function OppCard({ opp, isFavorite, userId, onFavoriteChange }) {
       onFavoriteChange?.(opp.id, agoraSalvo);
 
       if (salvo) {
-        const { error } = await removeFavoriteForUser(userId, opp.id, makeClient());
+        const { error } = await removeFavoriteForUser(userId, opp.id, supabaseClient);
         if (error) throw error;
         mostrar('Programa removido dos favoritos.');
       } else {
-        const { error } = await addFavoriteForUser(userId, opp.id, makeClient());
+        const { error } = await addFavoriteForUser(userId, opp.id, supabaseClient);
         if (error) throw error;
         mostrar('Programa salvo nos favoritos.');
       }
@@ -130,7 +128,7 @@ export default function OppCard({ opp, isFavorite, userId, onFavoriteChange }) {
     e.stopPropagation();
     setOcupado(true);
     try {
-      const { error, duplicate } = await createApplicationForUser(userId, opp.id, opp, makeClient());
+      const { error, duplicate } = await createApplicationForUser(userId, opp.id, opp, supabaseClient);
       if (error) throw error;
       setAdicionado(true);
       mostrar(
