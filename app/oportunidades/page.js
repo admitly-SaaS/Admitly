@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase.js';
+import { temAssinaturaAtiva } from '@/lib/subscriptions.js';
 import { calcularMatches, filterOpportunities } from '@/lib/matching.js';
 import { bateBusca } from '@/lib/busca.js';
 import { formatarData, diasAte, prazoStatus } from '@/lib/prazos.js';
@@ -197,7 +198,7 @@ export default function Oportunidades() {
 
     supabase.auth
       .getUser()
-      .then(({ data, error: erroAuth }) => {
+      .then(async ({ data, error: erroAuth }) => {
         if (!ativo) return;
 
         if (erroAuth) {
@@ -216,6 +217,15 @@ export default function Oportunidades() {
           setSemSessao(true);
           setCarregando(false);
           router.push('/login');
+          return;
+        }
+
+        // Assinatura obrigatória, como no /chat: sem ela, vai direto para o paywall.
+        const ativa = await temAssinaturaAtiva(supabase, userData.id);
+        if (!ativa) {
+          carregouRef.current = true;
+          setCarregando(false);
+          router.push('/assinar');
           return;
         }
 
@@ -889,9 +899,9 @@ const CSS = `
 }
 @media (max-width:640px){
   .opps-topo{ padding:6px 16px 2px; gap:2px 8px; flex-wrap:wrap; }
-  .opps-nav{ flex:1 1 100%; justify-content:space-between; gap:8px; }
+  .opps-nav{ flex:1 1 auto; min-width:0; flex-wrap:wrap; justify-content:space-between; gap:6px 14px; }
   /* alvos de toque: 44px de altura é o mínimo confortável no polegar */
-  .opps-nav > a{ font-size:13px; padding:15px 6px; }
+  .opps-nav > a{ font-size:13px; padding:15px 6px; white-space:nowrap; }
   .btn-conta{ width:40px; height:40px; }
   /* marca compacta na linha de cima */
   .marca-mini{ gap:6px; }

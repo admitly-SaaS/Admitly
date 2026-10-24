@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
+import { temAssinaturaAtiva } from '../../lib/subscriptions.js'
 import {
   criarAtividade,
   listarAtividades,
@@ -55,6 +56,9 @@ export default function Extracurriculares() {
     const iniciar = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
+      // Assinatura obrigatória, como no /chat: sem ela, vai direto para o paywall.
+      const ativa = await temAssinaturaAtiva(supabase, user.id)
+      if (!ativa) { router.push('/assinar'); return }
       const { data } = await listarAtividades(user.id, supabase)
       setAtividades(data || [])
       setCarregando(false)
@@ -483,8 +487,11 @@ const CSS = `
 
 @media (max-width:640px){
   .ext-topo{ padding:6px 16px 2px; gap:2px 8px; flex-wrap:wrap; }
-  .ext-nav{ flex:1 1 100%; justify-content:space-between; gap:8px; }
-  .ext-nav > a{ font-size:13px; padding:15px 4px; }
+  /* nav não pode derramar: sem flex-base inteiro (forçava overflow de ~120px
+     e cortava 'Extracurriculares'); agora encolhe com quebras dentro do próprio
+     item em apertos extremos, em vez de desenhar fora da tela */
+  .ext-nav{ flex:1 1 auto; min-width:0; flex-wrap:wrap; justify-content:space-between; gap:6px 14px; }
+  .ext-nav > a{ font-size:13px; padding:15px 4px; white-space:nowrap; }
   .btn-conta{ width:40px; height:40px; }
   .marca-mini-escudo{ width:18px; }
   .marca-mini span{ font-size:11px; letter-spacing:.14em; }

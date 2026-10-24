@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
+import { temAssinaturaAtiva } from '../../lib/subscriptions.js'
 import { lerPrefs, gravarPrefs, normalizarPrefs } from '../../lib/email-prefs.js'
 import { listarAtividades, resumoParaPerfil } from '../../lib/extracurriculares.js'
 import { calcularStreak, linhaStreak, prontidao as calcularProntidao, gerarMissoes, proximoPrazo } from '../../lib/atividade.js'
@@ -143,6 +144,14 @@ export default function Perfil() {
       setMsgBoa(true)
       setUltimaAtualizacao(new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }))
       setMensagem('Perfil salvo com sucesso.')
+      // Primeira entrada (sem assinatura): em vez de bater no guard do /chat e
+      // cair no paywall, o destino já é a amostra de trial da /assinar — grupos
+      // de oportunidades compatíveis com o perfil que ACABOU de ser salvo.
+      // Quem já assina segue para o chat, como sempre.
+      const { data: { user: quem } } = await supabase.auth.getUser()
+      const ativa = quem ? await temAssinaturaAtiva(supabase, quem.id) : false
+      // Pequeno intervalo para o aluno ler a confirmação antes do destino.
+      setTimeout(() => router.push(ativa ? '/chat' : '/assinar'), 600)
     }
     setSalvando(false)
   }
@@ -582,9 +591,9 @@ const CSS = `
 
 @media (max-width:640px){
   .perfil-topo{ padding:8px 16px; gap:4px 8px; flex-wrap:wrap; }
-  .perfil-nav{ flex:1 1 100%; justify-content:space-between; gap:8px; }
+  .perfil-nav{ flex:1 1 auto; min-width:0; flex-wrap:wrap; justify-content:space-between; gap:6px 14px; }
   /* alvos de toque: 44px de altura é o mínimo confortável no polegar */
-  .perfil-nav > a{ font-size:13px; padding:15px 6px; }
+  .perfil-nav > a{ font-size:13px; padding:15px 6px; white-space:nowrap; }
   .btn-conta{ width:40px; height:40px; }
   /* o link de voltar ganha área de toque generosa no polegar */
   .perfil-topo .btn-link{ display:inline-block; padding:14px 10px; }

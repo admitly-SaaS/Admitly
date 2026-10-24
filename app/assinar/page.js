@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 import { temAssinaturaAtiva } from '../../lib/subscriptions.js'
+import { calcularMatches } from '../../lib/matching'
+import { adaptarPerfil } from '../../lib/perfil-academico.js'
 
 // Paywall no design v3: a carta que oferece a assinatura.
 // O checkout continua sendo o link da Kiwify (abre em outra aba); o que muda é
@@ -69,6 +71,15 @@ export default function Assinar() {
   const [liberando, setLiberando] = useState(false)
   const [mensagem, setMensagem] = useState(null)
   const [menuAberto, setMenuAberto] = useState(false)
+  // Amostra real antes do checkout: até 3 oportunidades do catálogo compatíveis
+  // com o perfil salvo — os mesmos números que o mentor e o radar usam.
+  // states: null = carregando; [] = perfil falta ou nada combinou (honesto);
+  // resultado = os exemplos.
+  const [amostras, setAmostras] = useState(null)
+  const [semPerfil, setSemPerfil] = useState(false)
+  const [falhaCatalogo, setFalhaCatalogo] = useState(false)
+  const [totalCatalogo, setTotalCatalogo] = useState(null)
+  const [totalCompativeis, setTotalCompativeis] = useState(null)
   const timerRef = useRef(null)
 
   const sair = async () => {
@@ -137,6 +148,48 @@ export default function Assinar() {
     }
   }, [verificar])
 
+  useEffect(() => {
+    let ativo = true
+
+    const carregarAmostras = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session || !ativo) return
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || !ativo) return
+
+      const meta = user.user_metadata?.perfil_academico || null
+      if (!meta || !String(meta.anoEscolar || '').trim()) {
+        if (ativo) setSemPerfil(true)
+        return
+      }
+
+      const { data: opps, error } = await supabase.from('opportunities').select('*')
+      if (!ativo) return
+      if (error) {
+        console.warn('assinar: catálogo indisponível para a amostra', error)
+        // Estado próprio de falha — não pode soar como "nada combinou",
+        // porque a leitura é que não aconteceu.
+        setFalhaCatalogo(true)
+        setAmostras([])
+        return
+      }
+      setTotalCatalogo(opps.length)
+
+      // Mesma engine da aba Oportunidades: ordena por compatibilidade, depois
+      // por seletividade. Na amostra, só entram Alta/Média com prazo ainda vivo
+      // — sem inventar “oportunidade compatível” para quem não tem uma.
+      const matches = calcularMatches(opps, adaptarPerfil(meta))
+        .filter((o) => o.compatibility.level !== 'Baixa' && o.deadline.tipo !== 'encerrada')
+      // Trial: até 5 amostras visíveis; o restante fica contado na nota —
+      // “quantas mais” é o argumento de venda que convence a assinar.
+      setTotalCompativeis(matches.length)
+      setAmostras(matches.slice(0, 5))
+    }
+
+    carregarAmostras()
+    return () => { ativo = false }
+  }, [])
+
   const jaPaguei = async () => {
     setLiberando(true)
     setMensagem(null)
@@ -164,7 +217,9 @@ export default function Assinar() {
         </div>
 
         <nav className="assinar-nav">
-          <a href="/oportunidades">Oportunidades</a>
+          {/* Sem as abas Oportunidades/Extracurriculares: sem assinatura elas só
+          devolvem o leitor para cá (o guard do paywall rebate) — e a amostra
+          real que já está na carta faz esse papel melhor. */}
           <a href="/aplicacoes">Aplicações</a>
           <a href="/perfil">Perfil</a>
           <div className="menu-conta">
@@ -222,6 +277,53 @@ export default function Assinar() {
                 </li>
               ))}
             </ul>
+
+            {/* ===== amostra real, antes do checkout ===== */}
+            <div className="assinar-amostra" aria-live="polite">
+              <span className="caps-sec">
+                {totalCompativeis != null && totalCompativeis > 0
+                  ? `Antes de assinar — ${totalCompativeis} combinam com o seu perfil, comece por estas`
+                  : 'Antes de assinar — combina com o seu perfil'}
+              </span>
+              {amostras == null ? (
+                <p className="assinar-amostra-estado">Calculando com o seu perfil…</p>
+              ) : amostras.length > 0 ? (
+                <>
+                  <ul className="assinar-amostra-lista">
+                    {amostras.map((o) => (
+                      <li key={o.id} className="assinar-amostra-item">
+                        <div className="amostra-topo">
+                          <span className="amostra-nome">{o.name}</span>
+                          <span className={`amostra-nivel amostra-nivel--${(o.compatibility.level || '').toLowerCase()}`}>
+                            {o.compatibility.level}
+                          </span>
+                        </div>
+                        <p className="amostra-detalhe">
+                          {[o.country, o.provider, o.type].filter(Boolean).join(' · ')}
+                          {o.compatibility.reasons?.[0] ? ` — ${o.compatibility.reasons[0]}` : ''}
+                        </p>
+                        <p className="amostra-prazo">{o.deadline.text}</p>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="assinar-amostra-nota">
+                    Recalculados com a mesma engine do catálogo, a partir do seu perfil salvo
+                    {totalCatalogo ? ` entre ${totalCatalogo} oportunidades` : ''}.
+                    {totalCompativeis != null && amostras.length > 0 && totalCompativeis > amostras.length
+                      ? ` São ${totalCompativeis - amostras.length} outras compatíveis como estas — ` : ''}
+                    a versão completa, com todos os filtros e o radar de novidades, abre com a assinatura.
+                  </p>
+                </>
+              ) : (
+                <p className="assinar-amostra-estado">
+                  {falhaCatalogo
+                    ? 'Não conseguimos ler o catálogo agora — tente recarregar a página em instantes.'
+                    : semPerfil
+                    ? 'Seu perfil ainda não tem ano escolar salvo — é ele que orienta a compatibilidade. Complete-o no Perfil e os exemplos aparecem aqui.'
+                    : 'Nenhuma oportunidade bateu com o seu perfil hoje — as janelas e os prazos mudam, e o radar avisa quando entra algo novo.'}
+                </p>
+              )}
+            </div>
           </div>
 
           <p className="assinar-envelope">
@@ -271,6 +373,21 @@ export default function Assinar() {
             levar até 2 dias úteis. Para cancelar, use o link que a Kiwify manda por e-mail na
             confirmação da compra.
           </p>
+
+          {/* Decreto 7.962/2013, art. 4º: informação pré-contratual e destaque do
+          direito de arrependimento — exigValida na própria página de compra. */}
+          <div className="assinar-legal">
+            <p>
+              <strong>Comprando pela internet:</strong> você tem{' '}
+              <strong>7 dias para se arrepender e receber 100% de volta</strong>
+              {' '}(art. 49 do CDC) — <a href="/reembolso">como pedir o reembolso</a>.
+            </p>
+            <p className="assinar-legal-links">
+              Antes de assinar, leia os <a href="/termos" target="_blank" rel="noopener noreferrer">Termos de Serviço</a>, a{' '}
+              <a href="/privacidade" target="_blank" rel="noopener noreferrer">Política de Privacidade</a> e a{' '}
+              <a href="/reembolso" target="_blank" rel="noopener noreferrer">Política de Reembolso</a>.
+            </p>
+          </div>
         </section>
       </div>
     </main>
@@ -294,6 +411,12 @@ const CSS = `
    subtítulo, o auto do envelope...). As regras de ritmo lá embaixo vão escritas
    como p.assinar-*, que também é (0,1,1): aí desempata a ordem, e elas vêm depois. */
 .assinar-pagina h1, .assinar-pagina p{ margin:0; }
+
+.assinar-legal{ margin-top:18px; padding-top:14px; border-top:1px solid var(--hairline); }
+.assinar-legal p{ font:400 12px/1.65 var(--sans); color:var(--tinta-sec); }
+.assinar-legal strong{ color:var(--tinta); }
+.assinar-legal a{ color:var(--acento); text-decoration:underline; text-underline-offset:2px; }
+.assinar-legal-links{ margin-top:6px; }
 .assinar-carregando{
   padding:96px 0; text-align:center;
   font-family:var(--mono); font-size:12px; letter-spacing:.08em; color:var(--tinta-sec);
@@ -371,6 +494,35 @@ p.assinar-sub{ margin-top:18px; font-size:16.5px; line-height:1.75; color:var(--
 }
 .assinar-incluido li{ display:flex; align-items:baseline; gap:12px; font-size:15.5px; line-height:1.6; }
 .assinar-incluido .dot{ margin-top:7px; }
+
+/* ===== amostra real antes do checkout ===== */
+.assinar-amostra{
+  margin-top:26px; padding-top:22px; border-top:1px solid var(--hairline);
+}
+.assinar-amostra-lista{
+  margin:14px 0 0; padding:0; list-style:none;
+  display:flex; flex-direction:column; gap:14px;
+}
+.assinar-amostra-item{
+  padding:14px 16px; border:1px solid var(--hairline); border-radius:4px;
+  background:var(--papel-elev);
+}
+.amostra-topo{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+.amostra-nome{ font:400 17px/1.3 var(--serif); letter-spacing:-.005em; }
+.amostra-nivel{
+  flex:none; font-family:var(--mono); font-size:10px; letter-spacing:.08em;
+  text-transform:uppercase; padding:3px 8px; border-radius:2px;
+}
+.amostra-nivel--alta{ color:var(--lacre); border:1px solid rgba(26,77,58,.35); }
+.amostra-nivel--media{ color:var(--acento); border:1px solid rgba(31,58,95,.30); }
+.amostra-nivel--baixa{ color:var(--tinta-sec); border:1px solid var(--hairline); }
+.amostra-detalhe{ margin-top:6px; font-size:13.5px; line-height:1.55; color:var(--tinta-sec); }
+.amostra-prazo{
+  margin-top:8px; font-family:var(--mono); font-size:11px;
+  letter-spacing:.04em; color:var(--tinta-sec); text-transform:uppercase;
+}
+p.assinar-amostra-estado{ margin-top:12px; font-size:14px; line-height:1.6; color:var(--tinta-sec); }
+p.assinar-amostra-nota{ margin-top:14px; font-size:13px; line-height:1.65; color:var(--tinta-sec); }
 
 p.assinar-envelope{
   margin-top:auto; padding-top:16px; border-top:1px solid var(--hairline);

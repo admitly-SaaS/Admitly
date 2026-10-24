@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 import { prazoStatus, formatarData } from '../../lib/prazos.js'
+import { temAssinaturaAtiva } from '../../lib/subscriptions.js'
 import { TIPOS, carregarDocumentos, gravarEstado, proximoEstado, desmarcarEstado, criticosFaltando } from '../../lib/documentos.js'
 
 // Acompanhamento das candidaturas no design v3 (papel, Caslon, azul-tinta).
@@ -141,6 +142,12 @@ export default function Aplicacoes() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         router.push('/login')
+        return
+      }
+      // Assinatura obrigatória, como no /chat: sem ela, vai direto para o paywall.
+      const ativa = await temAssinaturaAtiva(supabase, user.id)
+      if (!ativa) {
+        router.push('/assinar')
         return
       }
       setUserId(user.id)
@@ -1066,9 +1073,9 @@ const CSS = `
 
 @media (max-width:640px){
   .apl-topo{ padding:6px 16px 2px; gap:2px 8px; flex-wrap:wrap; }
-  .apl-nav{ flex:1 1 100%; justify-content:space-between; gap:8px; }
+  .apl-nav{ flex:1 1 auto; min-width:0; flex-wrap:wrap; justify-content:space-between; gap:6px 14px; }
   /* alvos de toque: 44px de altura é o mínimo confortável no polegar */
-  .apl-nav > a{ font-size:13px; padding:15px 6px; }
+  .apl-nav > a{ font-size:13px; padding:15px 6px; white-space:nowrap; }
   .btn-conta{ width:40px; height:40px; }
   /* marca compacta na linha de cima */
   .marca-mini-escudo{ width:18px; }
