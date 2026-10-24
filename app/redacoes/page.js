@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
+import { temAssinaturaAtiva } from '../../lib/subscriptions.js'
 import {
   criarEnsaioParaUsuario,
   listarEnsaiosParaUsuario,
@@ -95,6 +96,9 @@ export default function Redacoes() {
     const iniciar = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
+      // Assinatura obrigatória, como no /chat: sem ela, vai direto para o paywall.
+      const ativa = await temAssinaturaAtiva(supabase, user.id)
+      if (!ativa) { router.push('/assinar'); return }
       setUserId(user.id)
 
       const [ens, aps] = await Promise.all([
@@ -348,6 +352,7 @@ export default function Redacoes() {
           <a href="/oportunidades">Oportunidades</a>
           <a href="/aplicacoes">Aplicações</a>
           <a href="/redacoes" className="ativo" aria-current="page">Redações</a>
+          <a href="/extracurriculares">Extracurriculares</a>
           <a href="/perfil">Perfil</a>
           <div className="menu-conta">
             <button type="button" className="btn-conta" onClick={() => setMenuAberto((v) => !v)} aria-label="Menu da conta" aria-expanded={menuAberto}>
@@ -786,8 +791,8 @@ const CSS = `
 
 @media (max-width:640px){
   .red-topo{ padding:6px 16px 2px; gap:2px 8px; flex-wrap:wrap; }
-  .red-nav{ flex:1 1 100%; justify-content:space-between; gap:8px; }
-  .red-nav > a{ font-size:13px; padding:15px 6px; }
+  .red-nav{ flex:1 1 auto; min-width:0; flex-wrap:wrap; justify-content:space-between; gap:6px 14px; }
+  .red-nav > a{ font-size:13px; padding:15px 6px; white-space:nowrap; }
   .btn-conta{ width:40px; height:40px; }
   .marca-mini-escudo{ width:18px; }
   .marca-mini span{ font-size:11px; letter-spacing:.14em; }
