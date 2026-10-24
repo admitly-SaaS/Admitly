@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { timingSafeEqual } from 'node:crypto'
 
 // Webhook do checkout (Kiwify). O aluno paga lá; aqui o acesso é liberado ou
 // revogado. O token chega na query string (?token=...), como a Kiwify envia.
@@ -71,11 +72,20 @@ async function definirAssinatura(userId, status) {
   return error || null
 }
 
+// Comparação em tempo constante: o JavaScript `===` desiste no primeiro byte
+// diferente e, com tráfego suficiente, esse timing poderia refinar um
+// ataque de descoberta do token byte a byte. O timingSafeEqual apaga a diferença.
+function tokenValido(recebido, esperado) {
+  const a = Buffer.from(String(recebido || ''))
+  const b = Buffer.from(String(esperado || ''))
+  return a.length === b.length && timingSafeEqual(a, b)
+}
+
 export async function POST(request) {
   const tokenEsperado = process.env.KIWIFY_WEBHOOK_TOKEN
   const tokenRecebido = new URL(request.url).searchParams.get('token')
 
-  if (!tokenEsperado || tokenRecebido !== tokenEsperado) {
+  if (!tokenEsperado || !tokenValido(tokenRecebido, tokenEsperado)) {
     return Response.json({ erro: 'token inválido' }, { status: 401 })
   }
 
