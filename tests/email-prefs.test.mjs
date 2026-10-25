@@ -28,16 +28,16 @@ test('devePausar: NÃO pausa por défaut/estado confuso (pausa é exceção, nã
   assert.equal(devePausar({ pausar_digest: true, pausar_alerta: true }, 'qualquer'), false);
 });
 
-test('jobs pausáveis são digest e alerta — a superfície toda dos e-mails do cron', () => {
-  assert.deepEqual(JOBS_PAUSAVEIS, ['digest', 'alerta']);
+test('jobs pausáveis são digest, alerta e onboarding — a superfície toda dos e-mails do cron', () => {
+  assert.deepEqual(JOBS_PAUSAVEIS, ['digest', 'alerta', 'onboarding']);
 });
 
 test('prefsPadrao/normalizarPrefs: linha ausente = tudo ligado, sem undefined na tela', () => {
-  assert.deepEqual(prefsPadrao(), { pausar_digest: false, pausar_alerta: false });
-  assert.deepEqual(normalizarPrefs(null), { pausar_digest: false, pausar_alerta: false });
-  const linha = { pausar_digest: true, pausar_alerta: false, atualizado_em: '2026-10-18T12:00:00Z' };
+  assert.deepEqual(prefsPadrao(), { pausar_digest: false, pausar_alerta: false, pausar_onboarding: false });
+  assert.deepEqual(normalizarPrefs(null), { pausar_digest: false, pausar_alerta: false, pausar_onboarding: false });
+  const linha = { pausar_digest: true, pausar_alerta: false, pausar_onboarding: true, atualizado_em: '2026-10-18T12:00:00Z' };
   const normal = normalizarPrefs(linha);
-  assert.deepEqual(normal, { pausar_digest: true, pausar_alerta: false });
+  assert.deepEqual(normal, { pausar_digest: true, pausar_alerta: false, pausar_onboarding: true });
   assert.equal('atualizado_em' in normal, false, 'a tela só vê os toggles, nada de schema vazar');
 });
 
@@ -59,10 +59,10 @@ function clienteFalso({ leitura = null, erroLeitura = null, erroGrava = null } =
 }
 
 test('lerPrefs: lê a linha do aluno; falha real volta como erro (não como silêncio)', async () => {
-  const ok = clienteFalso({ leitura: { pausar_digest: true, pausar_alerta: false } });
+  const ok = clienteFalso({ leitura: { pausar_digest: true, pausar_alerta: false, pausar_onboarding: true } });
   const r1 = await require('../lib/email-prefs.js').lerPrefs(ok, 'u1');
   assert.equal(r1.error, null);
-  assert.deepEqual(r1.prefs, { pausar_digest: true, pausar_alerta: false });
+  assert.deepEqual(r1.prefs, { pausar_digest: true, pausar_alerta: false, pausar_onboarding: true });
   assert.ok(String(ok.chamadas.ultimoEq).includes('user_id=u1'));
 
   const quebra = clienteFalso({ erroLeitura: { code: '42P01', message: 'boom' } });

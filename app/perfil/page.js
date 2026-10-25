@@ -409,7 +409,7 @@ export default function Perfil() {
           <div className="prefs-e-mail">
             <span className="caps-sec">E-mails do Admitly</span>
             <p className="prefs-e-mail--nota">
-              Duas mensagens no máximo por semana — o resumo de segunda e o alerta de prazo. Você pausa cada um no toque abaixo; a pausa vale para as próximas rodadas, e reativar volta ao ritmo normal.
+              Três famílias de mensagem, cada uma com o seu toggle: o resumo de segunda, o alerta de prazo, e a cadência de onboarding (boas-vindas e lembretes para contas novas). Pausar é reversível — reativar volta ao ritmo normal.
             </p>
             {avisoPrefs === 'migration' ? (
               <p className="prefs-e-mail--aviso">As preferências de e-mail não estão ativas ainda (migration pendente no painel).</p>
@@ -432,6 +432,15 @@ export default function Perfil() {
                     disabled={salvandoPrefs}
                   />
                   <span>Alerta de prazo <em>(D-7 e D-2 de cada candidatura)</em></span>
+                </label>
+                <label className="prefs-toggle">
+                  <input
+                    type="checkbox"
+                    checked={!prefs.pausar_onboarding}
+                    onChange={(e) => alternarPrefs('pausar_onboarding', !e.target.checked)}
+                    disabled={salvandoPrefs}
+                  />
+                  <span>Cadência de onboarding <em>(boas-vindas e um lembrete de perfil — contas novas)</em></span>
                 </label>
               </>
             )}
