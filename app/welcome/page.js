@@ -11,8 +11,14 @@ const SALAS = [
   { nome: 'Perfil', texto: 'Onde tudo começa. Quanto melhor você se conta, mais precisas ficam as recomendações.' },
   { nome: 'Oportunidades', texto: 'Olimpíadas, programas de verão, pesquisas e bolsas, com prazo, custo e requisitos.' },
   { nome: 'Chat', texto: 'Um mentor para tirar dúvidas, montar um plano e revisar seus ensaios.' },
+  { nome: 'Redações', texto: 'Um rascunho por candidatura: escreva, receba a análise do mentor e evolua versão por versão.' },
+  { nome: 'Extracurriculares', texto: 'Suas atividades no formato que o Common App pede: listagem pronta, verbo forte, 150 caracteres.' },
   { nome: 'Aplicações', texto: 'O que você já iniciou, com prazos e próximos passos.' },
 ]
+
+// As "novas features" não são só abas: o app também TRABALHA fora dele — os
+// e-mails automáticos entram no corpo da carta como um parágrafo (não como
+// mais uma sala, para a lista de navegação não engolir o que chega por fora).
 
 // ===== Arte final da marca (escudo-pórtico) =====
 // O "A" de Admitly como arquitetura: frontão, três colunas, arquitraves.
@@ -173,6 +179,10 @@ export default function Welcome() {
               </li>
             ))}
           </ol>
+
+          <p>
+            E o Admitly também trabalha fora daqui: você recebe o resumo da semana por e-mail nas segundas de manhã, alertas quando uma candidatura chega a 7 e a 2 dias do prazo, e mensagens como esta quando a conta é nova. Qualquer uma delas você pausa num toque, nas preferências do perfil.
+          </p>
 
           <p>
             Por onde começar: conte um pouco sobre você. Leva poucos minutos, e é isso que faz o resto funcionar.
