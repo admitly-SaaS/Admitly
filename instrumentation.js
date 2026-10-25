@@ -42,7 +42,7 @@ export function register() {
   // Ticks consecutivos em que o job devia rodar e não concluiu (throw no
   // executar). Zera quando a rodada sai — com erro estrutural conta 0 também,
   // porque esse caso avisa por outra chave.
-  const travados = { digest: 0, alerta: 0 }
+  const travados = { digest: 0, alerta: 0, onboarding: 0 }
 
   const avisoDetalhes = (resumo) =>
     (resumo?.detalhes || [])
@@ -55,7 +55,7 @@ export function register() {
       const agora = Date.now()
       // Import dentro do tick: conta com .env completo e não bloqueia o boot.
       const { JOBS, deveRodarAgora, ultimaRodada, registrarRodada } = await import('./lib/cron-auto.js')
-      const { executarDigest, executarAlerta } = await import('./lib/cron-executar.js')
+      const { executarDigest, executarAlerta, executarOnboarding } = await import('./lib/cron-executar.js')
       const { createClient } = await import('@supabase/supabase-js')
 
       const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -98,6 +98,47 @@ export function register() {
         }
       } else {
         travados.digest = 0
+      }
+
+      // Onboarding: diário 9h BRT — slot UMA HORA após o do alerta (8h), então
+      // nunca concorrem com o digest/aplicação na mesma janela de relógio.
+      const leituraOnboarding = await ultimaRodada(admin, JOBS.onboarding)
+      if (leituraOnboarding.erro) {
+        console.warn('[cron] onboarding bloqueado: falha ao ler cron_runs (tabela aplicada no painel?):', leituraOnboarding.erro.message)
+        await avisarFalha('cron-ler-onboarding', {
+          assunto: 'Onboarding: leitura de cron_runs falhou',
+          resumo: 'O agendador não consegue ler a tabela cron_runs — a cadência de onboarding fica bloqueada (boas-vindas e lembretes não saem).',
+          detalhes: [{ rotulo: 'Erro', titulo: leituraOnboarding.erro.message || String(leituraOnboarding.erro) }],
+        })
+      } else if (deveRodarAgora(JOBS.onboarding, agora, leituraOnboarding.valor)) {
+        try {
+          const { erroEstrutural, resumo } = await executarOnboarding()
+          travados.onboarding = 0
+          await registrarRodada(admin, JOBS.onboarding, { erroEstrutural, resumo: resumo ? { enviados: resumo.enviados, falhas: resumo.falhas } : null })
+          console.log('[cron] onboarding', erroEstrutural || resumo)
+          if (erroEstrutural || (resumo && resumo.falhas > 0)) {
+            await avisarFalha('cron-rodada-onboarding', {
+              assunto: `Onboarding com falha — ${erroEstrutural || `${resumo.falhas} envio(s) falharam`}`,
+              resumo: erroEstrutural
+                ? 'A rodada de onboarding não conseguiu nem ler o estado (migration onboarding_mail aplicada no painel?). Ninguém novo recebeu boas-vindas/lembrete nesta janela.'
+                : 'A rodada de onboarding rodou, mas alguns envios falharam mesmo com reenvio. Esses alunos não receberam o e-mail desta janela (e o tipo NÃO foi gravado — a próxima janela nos reenvia).',
+              detalhes: erroEstrutural ? [{ rotulo: 'Erro', titulo: erroEstrutural }] : avisoDetalhes(resumo),
+            })
+          }
+        } catch (erroOnboarding) {
+          travados.onboarding += 1
+          console.error(`[cron] onboarding lançou (${travados.onboarding} ticks sem concluir):`, erroOnboarding)
+          if (travados.onboarding >= TICKS_TRAVADO) {
+            travados.onboarding = 0
+            await avisarFalha('cron-travado-onboarding', {
+              assunto: 'Onboarding travando a janela',
+              resumo: `Há ${TICKS_TRAVADO} ticks o onboarding devia rodar e lança exceção. Boas-vindas/lembretes da janela NÃO saíram.`,
+              detalhes: [{ rotulo: 'Erro', titulo: String(erroOnboarding?.message || erroOnboarding) }],
+            })
+          }
+        }
+      } else {
+        travados.onboarding = 0
       }
 
       // Alerta de prazo: diário 8h BRT.
