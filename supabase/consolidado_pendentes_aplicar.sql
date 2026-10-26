@@ -1,6 +1,6 @@
 -- ============================================================================
 -- CONSOLIDADO DAS MIGRATIONS PENDENTES DO ADMITLY
--- Gerado em 2026-10-19 · aplicar UMA VEZ, no SQL Editor do Supabase
+-- Gerado em 2026-10-19 · REGENERADO em 2026-10-26 (v2) · aplicar UMA VEZ, no SQL Editor do Supabase
 --
 -- Consta (em ordem):
 --   1. applications.details            (coluna jsonb — migration vazia no repo)
@@ -11,6 +11,9 @@
 --   6. cron_runs                       (registro do cron interno — RLS LIGADA)
 --   7. digest_foto                     (foto semanal p/ delta do digest — RLS LIGADA)
 --   8. email_prefs                     (pausar digest/alerta — migration citada pelo perfil)
+--   9. onboarding_mail + email_prefs.pausar_onboarding
+--      (cadência de onboarding: estado idempotente por (user_id, tipo),
+--       métrica de abertura do Resend e o 3º toggle de preferência)
 --
 -- Correções de segurança embutidas (autorizadas na revisão):
 --   🔴 cron_runs e digest_foto com ENABLE ROW LEVEL SECURITY (sem policies:
@@ -497,7 +500,56 @@ begin
 end $$;
 
 comment on table public.email_prefs is
-  'Preferências de e-mail do aluno (pausar digest semanal e/ou alertas de prazo). Linha ausente = tudo ligado.';
+  'Preferências de e-mail do aluno (pausar digest semanal, alertas de prazo e cadência de onboarding). Linha ausente = tudo ligado.';
+
+-- ----------------------------------------------------------------------------
+-- 9 · onboarding_mail — estado da cadência de onboarding (migration
+--     202610250001) + coluna pausar_onboarding na email_prefs.
+--     Chave (user_id, tipo): linha existe = e-mail já saiu — o cron decide
+--     sem guardar memória em processo. resend_id = correlato do evento do
+--     Resend (webhook /api/webhook-resend); aberto_em = 1ª abertura.
+-- ----------------------------------------------------------------------------
+create table if not exists public.onboarding_mail (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  tipo text not null check (tipo in ('bem_vindo', 'lembrete_perfil', 'reativacao')),
+  enviado_at timestamptz not null default now(),
+  resend_id text,
+  aberto_em timestamptz,
+  primary key (user_id, tipo)
+);
+
+create index if not exists idx_onboarding_mail_resend
+  on public.onboarding_mail (resend_id) where resend_id is not null;
+
+alter table public.onboarding_mail enable row level security;
+
+-- Idempotente (padrão do consolidado): só cria a policy se ainda não existir.
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'onboarding_mail'
+      and policyname = 'aluno lê o próprio onboarding'
+  ) then
+    create policy "aluno lê o próprio onboarding"
+      on public.onboarding_mail
+      for select
+      using (auth.uid() = user_id);
+  end if;
+end $$;
+
+-- Sem insert/update/delete para o cliente: cadência é decisão do servidor
+-- (cron + webhook do Resend, ambos service role). Junto com email_prefs
+-- (pausa), é o controle que o aluno tem — e é suficiente.
+
+-- Pausa de onboarding na MESMA tabela de preferências:
+-- coluna nova, default ligado (linha ausente segue = tudo ligado).
+-- 🟡 Idempotente: tolera a coluna já existindo.
+alter table public.email_prefs
+  add column if not exists pausar_onboarding boolean not null default false;
+
+comment on table public.onboarding_mail is
+  'Estado da cadência de onboarding por aluno: boas-vindas, lembrete de perfil, reativação. Chave (user_id, tipo) = idempotência; aberto_em = métrica de abertura.';
 
 commit;
 
@@ -506,5 +558,12 @@ select now() as aplicado_em,
          where schemaname = 'public'
            and tablename in ('radar_descartes','essays','essay_versions',
                              'extracurriculares','application_documents',
-                             'cron_runs','digest_foto','email_prefs')
-       ) as tabelas_criadas;
+                             'cron_runs','digest_foto','email_prefs','onboarding_mail')
+       ) as tabelas_criadas,
+       (select count(*) from information_schema.columns
+         where table_schema = 'public' and table_name = 'email_prefs'
+           and column_name = 'pausar_onboarding'
+       ) as coluna_onboarding_ok,
+       (select count(*) from pg_indexes
+         where schemaname = 'public' and indexname = 'idx_onboarding_mail_resend'
+       ) as indice_abertura_ok;
