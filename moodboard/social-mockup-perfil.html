@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admitly — mockup social: Instagram + TikTok</title>
+<style>
+  :root{
+    --papel:#F6F2EA; --papel-elev:#FCFAF5; --tinta:#191512; --tinta-sec:#5C554B;
+    --hairline:#E2DACB; --lacre:#1A4D3A; --acento:#1F3A5F; --vermelho:#A6301F;
+    --serif:'Libre Caslon Text',Georgia,serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'Instrument Sans','Helvetica Neue',sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--papel); color:var(--tinta); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  .topo{ text-align:center; padding:40px 20px 8px; }
+  .topo h1{ margin:0; font:400 34px/1.2 var(--serif); letter-spacing:-.5px; }
+  .topo p{ margin:10px 0 0; color:var(--tinta-sec); font-size:15px; }
+  olompiadas{ white-space:nowrap; } /* guard: nada decorativo que canse */
+  .salao{ display:flex; justify-content:center; align-items:flex-start; gap:48px; padding:32px 16px 64px; flex-wrap:wrap; }
+
+  /* ===== moldura do celular ===== */
+  .celula{ background:var(--papel-elev); border:1px solid var(--hairline); border-radius:26px; width:300px; padding:14px; box-shadow:0 18px 44px rgba(25,21,18,.10); }
+  .celula h2{ font:400 20px/1.2 var(--serif); text-align:center; margin:2px 0 12px; color:var(--tinta-sec); }
+  .perfil{ background:#fff; border:1px solid var(--hairline); border-radius:18px; overflow:hidden; }
+
+  /* ===== perfil ===== */
+  .perfil-topo{ display:flex; gap:14px; padding:16px 16px 10px; align-items:center; }
+  .avatar{ width:64px; height:64px; border-radius:50%; background:var(--acento); color:#FCFAF5; display:grid; place-items:center;
+    font:600 11px/1.25 var(--sans); text-align:center; padding:8px; letter-spacing:.4px; flex:none;
+    border:2px solid var(--lacre); }
+  .stats{ display:flex; gap:16px; font:600 12px var(--sans); }
+  .stats b{ display:block; font-size:13px; }
+  .stats span{ color:var(--tinta-sec); font-weight:400; }
+  .conta{ padding:2px 16px 8px; font:600 13px var(--sans); }
+  .conta .tip{ color:var(--tinta-sec); font-weight:400; font-size:11px; }
+  .bio-esqueleto{ padding:0 16px 12px; font:400 12.5px/1.5 var(--sans); color:var(--tinta); }
+  .bio-esqueleto em{ color:var(--lacre); font-style:normal; font-weight:600; }
+  .btn-perfil{ margin:0 16px 12px; background:var(--acento); color:#FCFAF5; text-align:center;
+    font:600 13px/1 var(--sans); padding:9px 0; border-radius:3px; }
+
+  .grade{ display:grid; grid-template-columns:repeat(3,1fr); gap:3px; padding:3px; }
+  .grade figure{ margin:0; aspect-ratio:1; display:grid; place-content:center; text-align:center; padding:8px;
+    color:#F8F4EC; font:400 10.5px/1.4 var(--sans); position:relative; overflow:hidden; }
+  .grade figure small{ font:500 8px/1.3 var(--mono); letter-spacing:1px; opacity:.75; display:block; margin-top:4px; text-transform:uppercase; }
+  .grade--tiktok figure{ aspect-ratio:3/4.2; }
+
+  /* tipos de peça */
+  .m{ background:linear-gradient(160deg,#1F3A5F,#16293F); }
+  .m2{ background:var(--lacre); }
+  .m3{ background:#FCFAF5; color:var(--tinta) !important; border:1px solid var(--hairline); }
+  .m3 .carimbo{ color:var(--vermelho); }
+  .m4{ background:#191512; }
+  .grade figcaption{ transform:scale(.96); }
+  .carimbo{ position:absolute; top:6px; right:8px; font:600 6.5px/1 var(--mono); letter-spacing:1px;
+    border:1px solid currentColor; border-radius:2px; padding:3px 5px; transform:rotate(8deg); opacity:.8; }
+  .lacre-final{ position:absolute; left:0; right:0; bottom:-6px; height:12px; background:var(--lacre); }
+
+  .rodape{ text-align:center; color:var(--tinta-sec); font:400 13px/1.6 var(--serif); padding:0 20px 60px; max-width:60ch; margin:0 auto; }
+  .rodape b{ color:var(--lacre); }
+  kbd{ font:500 12px var(--mono); background:var(--papel-elev); border:1px solid var(--hairline); border-radius:3px; padding:2px 6px; }
+</style>
+</head>
+<body>
+  <div class="topo">
+    <h1>Admitly nas redes — perfis + primeiros posts</h1>
+    <p>Cada peça é uma "peça do acervo": carimbo, envelope, prazo postal. O conteúdo real está no <b>plano de conteúdo</b>.</p>
+  </div>
+
+  <div class="salao">
+    <!-- ============================ INSTAGRAM ============================ -->
+    <div class="celula">
+      <h2>Instagram</h2>
+      <div class="perfil">
+        <div class="perfil-topo">
+          <div class="avatar">POSTA ILMITA 📮</div>
+          <div class="stats">
+            <b>42 <span>posts</span></b>
+            <b>— <span>seg.</span></b>
+            <b>0 <span>sig.</span></b>
+          </div>
+        </div>
+        <div class="conta">admitly <span class="tip">· página recém-aberta</span></div>
+        <div class="bio-esqueleto">
+          O acervo de oportunidades p/ estudantes 🇧🇷: olimpíadas, research e summer programs — com prazo, custo e <em>chance real</em>.<br />
+          📮 <b style="color:var(--acento)">admitly.com</b>
+        </div>
+        <div class="btn-perfil">COMEÇAR PELO RADAR</div>
+        <div class="grade">
+          <figure class="m"><figcaption>Post 1 — Bolsas não são só p/ gênios<small>carrossel</small></figcaption></figure>
+          <figure class="m4"><figcaption>Post 2 — prazos de olimpíadas 2026<small>reel</small><span class="carimbo">REEL</span></figcaption></figure>
+          <figure class="m2"><figcaption>Post 3 — summer programs<select><small>carrossel</small></select></figcaption></figure>
+          <figure class="m3"><figcaption>Post 4 — a caixa de correio inteira <select class="carimbo">POV</select><small>tela</small></figcaption></figure>
+          <figure class="m"><figcaption>Post 5 — IMC · Ibero · IPhO:index<small>carrossel</small></figcaption></figure>
+          <figure class="m2"><figcaption>Post 6 — o que NINGUÉM conta<small>carrossel</small></figcaption></figure>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================ TIKTOK ============================ -->
+    <div class="celula">
+      <h2>TikTok</h2>
+      <div class="perfil">
+        <div class="perfil-topo">
+          <div class="avatar" style="background:#191512;">@ADMITLY 📮</div>
+          <div class="stats">
+            <b>34 <span>vídeos</span></b>
+            <b>— <span>seg.</span></b>
+            <b>— <span>curtidas</span></b>
+          </div>
+        </div>
+        <div class="bio-esqueleto">
+          <b>admitly</b><span class="tip" style="padding-left:4px;color:var(--tinta-sec);font-weight:400;">@admitly</span><br />
+          fazendo a carta de admissão chegar 📮 | oportunidades p/ BR
+        </div>
+        <div class="btn-perfil" style="background:var(--vermelho);">SEGUIR</div>
+        <div class="grade grade--tiktok">
+          <figure class="m"><figcaption>v1 — o "gato" que entra na Yale<small>30s · text-on-screen</small></figcaption></figure>
+          <figure class="m4"><figcaption>v2 — a caça ao prazo real no app<small>tela direita</small><span class="carimbo">FIXADO</span></figcaption></figure>
+          <figure class="m2"><figcaption>v3 — quanto CUSTA candidatar<small>rápida tabela</small></figcaption></figure>
+          <figure class="m3"><figcaption>v4 (FIXADO) — POV olvidades-descer a aba<select class="carimbo">POV</select><small>tela</small></figcaption></figure>
+          <figure class="m2"><figcaption>v5 — pergunta real resposta real<small>série</small></figcaption></figure>
+          <figure class="m"><figcaption>v6 — planilha do caos vs. Aba Aplicação<small>antes/depois</small></figcaption></figure>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="rodape">
+    Os números de stats que ainda <b>não existem</b> aparecem com traço — a página nasce com rosto e sem mentira.
+    O conteúdo completo (bio, copy, hashtags e os 16 primeiros) está em <kbd>moodboard/social-plano-instagram-tiktok.md</kbd>,
+    e o avatar é o escudo azul-tinta do favicon (<kbd>app/icon.svg</kbd> em PNG 320×320).
+  </p>
+</body>
+</html>
