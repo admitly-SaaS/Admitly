@@ -76,6 +76,7 @@ function Topo({ menuAberto, setMenuAberto, sair }) {
         <a href="/redacoes">Redações</a>
         <a href="/extracurriculares">Extracurriculares</a>
         <a href="/perfil">Perfil</a>
+        <a href="/chat">Voltar ao chat</a>
         <div className="menu-conta">
           <button
             type="button"

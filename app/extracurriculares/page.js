@@ -171,6 +171,7 @@ export default function Extracurriculares() {
           <a href="/redacoes">Redações</a>
           <a href="/extracurriculares" className="ativo" aria-current="page">Extracurriculares</a>
           <a href="/perfil">Perfil</a>
+          <a href="/chat">Voltar ao chat</a>
           <div className="menu-conta">
             <button type="button" className="btn-conta" onClick={() => setMenuAberto((v) => !v)} aria-label="Menu da conta" aria-expanded={menuAberto}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
