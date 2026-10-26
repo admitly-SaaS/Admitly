@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# artefatos de sessão de dev (logs, pid, capturas)
+.devserver.log
+.dev-pid.txt
+.verif-server.log
+.verif-server.pid
+/screenshots/
