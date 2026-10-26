@@ -1,0 +1,96 @@
+<!--
+  Template do e-mail de CONFIRMAÇÃO DE CADASTRO do Admitly.
+  Onde aplicar: Painel Supabase → Authentication → Templates → "Confirm signup" —
+  cole o HTML inteiro no corpo, mantendo {{ .ConfirmationURL }} (o Supabase
+  troca pelo link real de verificação ao disparar).
+  Feito para clientes de e-mail: tabelas, estilos inline, sem SVG nem JS —
+  o Gmail remove <svg>, então a marca é feita com tipografia e filetes CSS.
+-->
+<!DOCTYPE html>
+<html lang="pt-BR" style="background-color:#EFE9DC;">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admitly — confirme seu e-mail</title>
+</head>
+<body style="margin:0; padding:0; background-color:#EFE9DC; font-family:Georgia,'Times New Roman',serif; color:#191512;">
+  <!-- ===== folha externa ===== -->
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#EFE9DC;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="560" class="folha" style="width:560px; max-width:100%; background-color:#FCFAF5; border:1px solid #E2DACB;">
+
+          <!-- ===== letterhead ===== -->
+          <tr>
+            <td style="padding:38px 40px 0 40px;">
+              <div style="font-family:Georgia,'Times New Roman',serif; font-size:22px; letter-spacing:7px; color:#1F3A5F; text-transform:uppercase;">ADMITLY</div>
+              <div style="height:0; border-top:2px solid #1F3A5F; margin-top:12px;"></div>
+              <div style="height:0; border-top:1px solid #1F3A5F; margin-top:3px; width:70%;"></div>
+              <div style="font-family:Arial,Helvetica,sans-serif; font-size:10.5px; letter-spacing:2.4px; text-transform:uppercase; color:#5C554B; margin-top:10px;">Oportunidades &amp; Admissões</div>
+            </td>
+          </tr>
+
+          <!-- ===== corpo ===== -->
+          <tr>
+            <td style="padding:34px 40px 0 40px;">
+              <p style="margin:0; font-size:15.5px; color:#5C554B;">Olá,</p>
+              <h1 style="margin:10px 0 0 0; font-size:30px; font-weight:400; line-height:1.25; color:#191512; letter-spacing:-.5px;">
+                Sua carta de <em style="font-style:italic; color:#1F3A5F;">admissão</em> está a caminho.
+              </h1>
+              <p style="margin:18px 0 0 0; font-size:16px; line-height:1.7; color:#191512;">
+                Falta um passo para ela partir: confirmar que este e-mail é seu. Ao confirmar, já entra direto na sua carta de boas-vindas dentro do Admitly.
+              </p>
+            </td>
+          </tr>
+
+          <!-- ===== botão ===== -->
+          <tr>
+            <td align="center" style="padding:30px 40px 6px 40px;">
+              <a href="{{ .ConfirmationURL }}" style="display:inline-block; background-color:#1F3A5F; color:#FCFAF5; text-decoration:none; font-family:Arial,Helvetica,sans-serif; font-weight:600; font-size:15px; padding:14px 30px; border-radius:3px;">
+                Confirmar meu e-mail
+              </a>
+            </td>
+          </tr>
+
+          <!-- ===== link alternativo (clientes que travam botões) ===== -->
+          <tr>
+            <td style="padding:14px 40px 0 40px;">
+              <p style="margin:0; font-family:'Courier New',monospace; font-size:11px; line-height:1.7; color:#5C554B; word-break:break-all;">
+                Se o botão não funcionar, copie e cole no navegador:<br />
+                <a href="{{ .ConfirmationURL }}" style="color:#1F3A5F;">{{ .ConfirmationURL }}</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- ===== envelope ===== -->
+          <tr>
+            <td style="padding:30px 40px 0 40px;">
+              <div style="height:0; border-top:1px solid #E2DACB;"></div>
+              <p style="margin:14px 0 0 0; font-family:'Courier New',monospace; font-size:10.5px; letter-spacing:1.5px; color:#5C554B;">
+                ENVELOPE Nº 001 &nbsp;·&nbsp; DESTINATÁRIO: VOCÊ &nbsp;·&nbsp; POSTAGEM: HOJE
+              </p>
+            </td>
+          </tr>
+
+          <!-- ===== rodapé ===== -->
+          <tr>
+            <td style="padding:16px 40px 34px 40px;">
+              <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:11.5px; line-height:1.6; color:#5C554B;">
+                Se você não criou uma conta no Admitly, ignore este e-mail — nada acontece.
+                Recebeu por conta de alguém que digitou seu e-mail por engano? Conte para nós: <a href="mailto:contato@admitly.com" style="color:#1A4D3A;">contato@admitly.com</a>.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- ===== largura do avatar/quadrado lacre no mobile ===== -->
+  <style type="text/css">
+    @media (max-width:600px){
+      .folha{ width:100% !important; border:0 !important; }
+    }
+  </style>
+</body>
+</html>
