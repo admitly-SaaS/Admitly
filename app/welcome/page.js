@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 
 // Cada "sala" do site vira UMA linha na carta.
-// Feature nova = um item novo aqui. Passou de 5 itens, a carta vira
-// documentação: explique o resto dentro da própria página, na primeira visita.
+// Feature nova = um item novo aqui. A lista mosta 3 salas por vez (a ordem
+// guide Perfil → Oportunidades → Chat fica sempre na primeira página); o resto
+// vem no pacote seguinte, sem a carta virar documentação de uma tacada só.
 const SALAS = [
   { nome: 'Perfil', texto: 'Onde tudo começa. Quanto melhor você se conta, mais precisas ficam as recomendações.' },
   { nome: 'Oportunidades', texto: 'Olimpíadas, programas de verão, pesquisas e bolsas, com prazo, custo e requisitos.' },
@@ -15,6 +16,9 @@ const SALAS = [
   { nome: 'Extracurriculares', texto: 'Suas atividades no formato que o Common App pede: listagem pronta, verbo forte, 150 caracteres.' },
   { nome: 'Aplicações', texto: 'O que você já iniciou, com prazos e próximos passos.' },
 ]
+
+const SALAS_POR_PAGINA = 3
+const PAGINAS_SALAS = Math.ceil(SALAS.length / SALAS_POR_PAGINA)
 
 // As "novas features" não são só abas: o app também TRABALHA fora dele — os
 // e-mails automáticos entram no corpo da carta como um parágrafo (não como
@@ -93,6 +97,9 @@ export default function Welcome() {
   const [nome, setNome] = useState('')
   const [envelopeNum, setEnvelopeNum] = useState('001')
   const [hoje, setHoje] = useState('')
+  // Salas em pacotes de 3: página 1 é o começo (Perfil → Oportunidades → Chat).
+  const [paginaSalas, setPaginaSalas] = useState(0)
+  const salasVisiveis = SALAS.slice(paginaSalas * SALAS_POR_PAGINA, (paginaSalas + 1) * SALAS_POR_PAGINA)
 
   // Datas, nome e número do envelope só no cliente (evita erro de hidratação).
   // A carta é para quem tem conta: sem sessão, volta pro login.
@@ -169,16 +176,40 @@ export default function Welcome() {
           <h3 className="carta-titulo">Como o Admitly funciona</h3>
 
           <ol className="carta-salas">
-            {SALAS.map((s, i) => (
-              <li key={s.nome}>
-                <span className="sala-num">{String(i + 1).padStart(2, '0')}</span>
-                <span>
-                  <span className="sala-nome">{s.nome}</span>
-                  <span className="sala-texto">{s.texto}</span>
-                </span>
-              </li>
-            ))}
+            {salasVisiveis.map((s, i) => {
+              const num = paginaSalas * SALAS_POR_PAGINA + i
+              return (
+                <li key={s.nome}>
+                  <span className="sala-num">{String(num + 1).padStart(2, '0')}</span>
+                  <span>
+                    <span className="sala-nome">{s.nome}</span>
+                    <span className="sala-texto">{s.texto}</span>
+                  </span>
+                </li>
+              )
+            })}
           </ol>
+
+          {/* Paginação postal: rubrica do pacote (SALAS 01–03 DE 06) e o
+              comando do próximo. Numeração continua de onde parou. */}
+          <div className="carta-paginas">
+            <span>
+              SALAS {String(paginaSalas * SALAS_POR_PAGINA + 1).padStart(2, '0')}–
+              {String(paginaSalas * SALAS_POR_PAGINA + salasVisiveis.length).padStart(2, '0')} DE {String(SALAS.length).padStart(2, '0')}
+            </span>
+            <span className="pag-navegador">
+              {paginaSalas > 0 && (
+                <button type="button" className="pag-opcao" onClick={() => setPaginaSalas(paginaSalas - 1)}>
+                  ← Pacote anterior
+                </button>
+              )}
+              {paginaSalas < PAGINAS_SALAS - 1 && (
+                <button type="button" className="pag-opcao" onClick={() => setPaginaSalas(paginaSalas + 1)}>
+                  Próximo pacote de salas →
+                </button>
+              )}
+            </span>
+          </div>
 
           <p>
             E o Admitly também trabalha fora daqui: você recebe o resumo da semana por e-mail nas segundas de manhã, alertas quando uma candidatura chega a 7 e a 2 dias do prazo, e mensagens como esta quando a conta é nova. Qualquer uma delas você pausa num toque, nas preferências do perfil.
@@ -243,11 +274,18 @@ const CSS = `
 .carta-corpo > p + p{ margin-top:16px; }
 .carta-titulo{ margin:40px 0 8px; font:400 28px/1.2 'Instrument Serif', Georgia, serif; letter-spacing:-.005em; }
 
-.carta-salas{ list-style:none; padding:0; margin:0 0 32px; border-top:1px solid var(--hairline); }
+.carta-salas{ list-style:none; padding:0; margin:0 0 14px; border-top:1px solid var(--hairline); }
 .carta-salas li{ display:flex; gap:18px; padding:16px 0; border-bottom:1px solid var(--hairline); }
 .sala-num{ font:500 12px/2.4 'IBM Plex Mono', ui-monospace, monospace; color:var(--acento); flex:none; }
 .sala-nome{ display:block; font:400 22px/1.3 'Instrument Serif', Georgia, serif; }
 .sala-texto{ display:block; font-size:16.5px; line-height:1.65; color:var(--tinta-sec); }
+
+.carta-paginas{ margin:0 0 32px; display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;
+  font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; letter-spacing:.08em; color:var(--tinta-sec); }
+.pag-navegador{ display:flex; gap:18px; }
+.pag-opcao{ background:none; border:0; cursor:pointer; padding:4px 2px; font:inherit; color:var(--acento);
+  text-decoration:underline; text-underline-offset:4px; text-decoration-thickness:1.5px; }
+.pag-opcao:hover{ color:#19304E; }
 
 .carta-assinatura{ margin-top:40px; display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap; }
 .ate-ja{ margin-bottom:10px; }
